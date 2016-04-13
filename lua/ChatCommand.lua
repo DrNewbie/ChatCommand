@@ -331,6 +331,7 @@ function ChatCommand:Menu_VIPMENU_Selected(params)
 	local opts = {}
 	opts[#opts+1] = { text = "View", callback_func = callback(self, self, "Menu_VIPMENU_Selected_View", {id = params.id}) }
 	opts[#opts+1] = { text = "Remove", callback_func = callback(self, self, "Menu_VIPMENU_Selected_Remove", {id = params.id}) }
+	opts[#opts+1] = { text = "[Cancel]", is_cancel_button = true }
 	local _dialog_data = {
 		title = "" .. params.id,
 		text = "",
