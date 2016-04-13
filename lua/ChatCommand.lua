@@ -1,7 +1,12 @@
 local _receive_message_by_peer_orig = ChatManager.receive_message_by_peer
 local _init_orig = ChatManager.init
 local rtd_time = {0, 0, 0, 0}
-local now_version = "[2016.02.22+]"
+local now_version = "[2016.04.14]"
+
+_G.ChatCommand = _G.ChatCommand or {}
+ChatCommand.VIP_LIST = ChatCommand.VIP_LIST or {}
+ChatCommand.VIP_LIST_IDX = ChatCommand.VIP_LIST_IDX or {}
+
 function ChatManager:init(...)
 	_init_orig(self, ...)
 	self:AddCommand("jail", false, false, function(peer)
@@ -26,7 +31,7 @@ function ChatManager:init(...)
 			end
 		end
 	end)
-	self:AddCommand("add", true, false, function()
+	self:AddCommand("add", true, false, function(peer, type1, type2, type3)
 		if not managers.network then
 			_send_msg("Error: !add")
 		else
@@ -57,6 +62,7 @@ function ChatManager:init(...)
 						self:say("Host change [" .. now_peer[idx]:name() .."] to VIP")
 					end
 					file:close()
+					Read_VIP_List()
 				else
 					self:say("Try again")
 				end
@@ -80,7 +86,7 @@ function ChatManager:init(...)
 			managers.hud:show_hint( { text = "LOUD!" } )
 		end	
 	end)
-	self:AddCommand({"dozer", "taser", "tas" ,"cloaker", "clo"}, true, true, function(peer, type1, type2, type3)
+	self:AddCommand({"dozer", "taser", "tas" ,"cloaker", "clo", "sniper"}, true, true, function(peer, type1, type2, type3)
 		local unit = peer:unit()
 		local unit_name = Idstring( "units/payday2/characters/ene_bulldozer_1/ene_bulldozer_1" )
 		local count = 1
@@ -92,6 +98,13 @@ function ChatManager:init(...)
 		end
 		if type3 and (type1 == "!dozer" or type1 == "/dozer") and tonumber(type3) <= 3 then
 			unit_name = Idstring( "units/payday2/characters/ene_bulldozer_" .. type3 .. "/ene_bulldozer_" .. type3 )
+		end
+		if type1 == "!sniper" or type1 == "/sniper" then
+			if tonumber(type3) == 1 or tonumber(type3) == 2 then
+				unit_name = Idstring( "units/payday2/characters/ene_sniper_" .. type3 .. "/ene_sniper_" .. type3 )
+			else
+				unit_name = Idstring( "units/payday2/characters/ene_sniper_2/ene_sniper_2" )
+			end
 		end
 		if type2 then
 			count = tonumber(type2)
@@ -112,6 +125,9 @@ function ChatManager:init(...)
 		if all_synced then
 			managers.game_play_central:restart_the_game()
 		end	
+	end)
+	self:AddCommand({"vipmenu"}, true, false, function()
+		ChatCommand:Menu_VIPMENU()
 	end)
 	self:AddCommand({"version", "ver"}, false, false, function()
 		self:say("Current version is " .. now_version)
@@ -234,20 +250,37 @@ function ChatManager:AddCommand(cmd, ishost, isvip, func)
 		end
 	end
 end
+
 function is_VIP(peer)
+	local line = tostring(peer:user_id())
+	if ChatCommand.VIP_LIST[line] then
+		return true
+	else
+		return false
+	end
+end
+
+function Read_VIP_List()
 	local file, err = io.open("mods/ChatCommand/vip_list.txt", "r")
-	local pass = false
+	ChatCommand.VIP_LIST = {}
+	ChatCommand.VIP_LIST_IDX = {}
 	if file then
 		local line = file:read()
-		while line and not pass do
-			if tostring(line) == tostring(peer:user_id()) then
-				pass = true
+		local count = 0
+		while line do
+			line = tostring(line)
+			if not ChatCommand.VIP_LIST[line] then
+				count = count + 1
+				ChatCommand.VIP_LIST[line] = count
+				table.insert(ChatCommand.VIP_LIST_IDX, line)
 			end
 			line = file:read()
 		end
+		file:close()
 	end
-	return pass
 end
+
+Read_VIP_List()
 
 function is_run_by_Host()
 	if not Network then return false end
@@ -265,4 +298,73 @@ function set_team( unit, team )
 	local AIState = M_groupAI:state()	
 	local team_id = tweak_data.levels:get_default_team_ID( team )
 	unit:movement():set_team( AIState:team_data( team_id ) )
+end
+
+function ChatCommand:Menu_VIPMENU(params)
+	local opts = {}
+	local start = params and params.start or 0
+	start = start >= 0 and start or 0
+	for k, v in pairs(ChatCommand.VIP_LIST_IDX or {}) do
+		if k > start then
+			opts[#opts+1] = { text = "" .. v .. "", callback_func = callback(self, self, "Menu_VIPMENU_Selected", {id = tostring(v)}) }
+		end
+		if (#opts) >= 10 then
+			start = k
+			break
+		end	
+	end
+	opts[#opts+1] = { text = "[Next]--------------", callback_func = callback(self, self, "Menu_VIPMENU", {start = start}) }
+	opts[#opts+1] = { text = "[Back to Main]----", callback_func = callback(self, self, "Menu_VIPMENU", {}) }
+	opts[#opts+1] = { text = "[Cancel]", is_cancel_button = true }
+	local _dialog_data = {
+		title = "VIP MENU ",
+		text = "",
+		button_list = opts,
+		id = tostring(math.random(0,0xFFFFFFFF))
+	}
+	if managers.system_menu then
+		managers.system_menu:show(_dialog_data)
+	end
+end
+
+function ChatCommand:Menu_VIPMENU_Selected(params)
+	local opts = {}
+	opts[#opts+1] = { text = "View", callback_func = callback(self, self, "Menu_VIPMENU_Selected_View", {id = params.id}) }
+	opts[#opts+1] = { text = "Remove", callback_func = callback(self, self, "Menu_VIPMENU_Selected_Remove", {id = params.id}) }
+	local _dialog_data = {
+		title = "" .. params.id,
+		text = "",
+		button_list = opts,
+		id = tostring(math.random(0,0xFFFFFFFF))
+	}
+	if managers.system_menu then
+		managers.system_menu:show(_dialog_data)
+	end
+end
+
+function ChatCommand:Menu_VIPMENU_Selected_View(params)
+	Steam:overlay_activate("url", "http://steamcommunity.com/profiles/" .. params.id)
+	ChatCommand:Menu_VIPMENU_Selected({id = params.id})
+end
+
+function ChatCommand:Menu_VIPMENU_Selected_Remove(params)
+	local file, err = io.open("mods/ChatCommand/vip_list.txt", "w")
+	if file then
+		for k, v in pairs(ChatCommand.VIP_LIST_IDX or {}) do
+			if tostring(v) ~= tostring(params.id) then
+				file:write(tostring(v) .. "\n")			
+			end
+		end
+		file:close()
+	end
+	Read_VIP_List()
+	local _dialog_data = {
+		title = "" .. params.id,
+		text = "He is removed from VIP list.",
+		button_list = {{ text = "OK", is_cancel_button = true }},
+		id = tostring(math.random(0,0xFFFFFFFF))
+	}
+	if managers.system_menu then
+		managers.system_menu:show(_dialog_data)
+	end
 end
