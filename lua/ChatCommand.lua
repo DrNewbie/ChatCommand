@@ -1,7 +1,7 @@
 local _receive_message_by_peer_orig = ChatManager.receive_message_by_peer
 local _init_orig = ChatManager.init
 local rtd_time = {0, 0, 0, 0}
-local now_version = "[2016.04.14]"
+local now_version = "[2016.04.21]"
 
 _G.ChatCommand = _G.ChatCommand or {}
 ChatCommand.VIP_LIST = ChatCommand.VIP_LIST or {}
@@ -86,7 +86,7 @@ function ChatManager:init(...)
 			managers.hud:show_hint( { text = "LOUD!" } )
 		end	
 	end)
-	self:AddCommand({"dozer", "taser", "tas" ,"cloaker", "clo", "sniper"}, true, true, function(peer, type1, type2, type3)
+	self:AddCommand({"dozer", "taser", "tas" ,"cloaker", "clo", "sniper", "shield"}, true, true, function(peer, type1, type2, type3)
 		local unit = peer:unit()
 		local unit_name = Idstring( "units/payday2/characters/ene_bulldozer_1/ene_bulldozer_1" )
 		local count = 1
@@ -104,6 +104,13 @@ function ChatManager:init(...)
 				unit_name = Idstring( "units/payday2/characters/ene_sniper_" .. type3 .. "/ene_sniper_" .. type3 )
 			else
 				unit_name = Idstring( "units/payday2/characters/ene_sniper_2/ene_sniper_2" )
+			end
+		end
+		if type1 == "!shield" or type1 == "/shield" then
+			if tonumber(type3) == 1 or tonumber(type3) == 2 then
+				unit_name = Idstring( "units/payday2/characters/ene_shield_" .. type3 .. "/ene_shield_" .. type3 )
+			else
+				unit_name = Idstring( "units/payday2/characters/ene_shield_2/ene_shield_2" )
 			end
 		end
 		if type2 then
