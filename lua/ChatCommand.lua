@@ -1,7 +1,7 @@
 local _receive_message_by_peer_orig = ChatManager.receive_message_by_peer
 local _init_orig = ChatManager.init
 local rtd_time = {0, 0, 0, 0}
-local now_version = "[2016.04.21]"
+local now_version = "[2016.04.25]"
 
 _G.ChatCommand = _G.ChatCommand or {}
 ChatCommand.VIP_LIST = ChatCommand.VIP_LIST or {}
@@ -9,8 +9,8 @@ ChatCommand.VIP_LIST_IDX = ChatCommand.VIP_LIST_IDX or {}
 
 function ChatManager:init(...)
 	_init_orig(self, ...)
-	self:AddCommand("jail", false, false, function(peer)
-		if managers.trade:is_peer_in_custody(peer:id()) then 
+	self:AddCommand({"jail", "kill"}, false, false, function(peer)
+		if not managers.trade:is_peer_in_custody(peer:id()) then 
 			if peer:id() == 1 then
 				--Copy from Cheat
 				local player = managers.player:local_player()
@@ -69,7 +69,7 @@ function ChatManager:init(...)
 			end
 		end
 	end)
-	self:AddCommand("donate", false, false, function()
+	self:AddCommand({"donate", "d"}, false, false, function()
 		local file, err = io.open("mods/ChatCommand/donate_msg.txt", "r")
 		if file then
 			local line = file:read()
