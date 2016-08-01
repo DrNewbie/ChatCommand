@@ -1,7 +1,13 @@
+if Network:is_client() then
+	return
+end
+
 local _receive_message_by_peer_orig = ChatManager.receive_message_by_peer
 local _init_orig = ChatManager.init
 local rtd_time = {0, 0, 0, 0}
-local now_version = "[2016.04.25]"
+local rtd_time_to_all = {Enemy_Health_Bonus = 0}
+local time2loopcheck = false
+local now_version = "[2016.08.01]"
 
 _G.ChatCommand = _G.ChatCommand or {}
 ChatCommand.VIP_LIST = ChatCommand.VIP_LIST or {}
@@ -157,16 +163,14 @@ function ChatManager:init(...)
 	end)
 	self:AddCommand("rtd", false, false, function(peer)
 		local unit = peer:unit()
-		local nowtime = function (type) return type and TimerManager:game():time() or managers.player:player_timer():time() end
-		local now1 = nowtime()
-		local now2 = math.floor(now1)
+		local nowtime = math.floor(managers.player:player_timer():time())
 		local pid = peer:id()
 		local pname = peer:name()
 		local pos = unit:position()
 		local rot = unit:rotation()
-		if rtd_time[pid] < now2 then
-			rtd_time[pid] = now2 + 60
-			local _roll = math.random(1,10)
+		if rtd_time[pid] < nowtime then
+			rtd_time[pid] = nowtime + 60
+			local _roll = 11--math.random(1, 14)
 			if _roll == 1 then
 				self:say("[".. pname .."] roll for Doctor Bag!!")
 				DoctorBagBase.spawn( pos, rot, 0 )
@@ -186,12 +190,31 @@ function ChatManager:init(...)
 					local unit_done = World:spawn_unit( unit_name, unit:position(), unit:rotation() )
 					set_team( unit_done, unit_done:base():char_tweak().access == "gangster" and "gangster" or "combatant" )
 				end
+			elseif _roll == 10 then
+				self:say("[".. pname .."] roll for Grenade Out!!")
+				local projectile_index = tweak_data.blackmarket:get_index_from_projectile_id("frag")
+				local _xy_fixed = {-10, 10, -100, 100, -200, 200, -500, 500}
+				for i = 1, 10 do
+					ProjectileBase.throw_projectile(projectile_index, pos + Vector3(_xy_fixed[math.random(8)], _xy_fixed[math.random(8)], 100), Vector3(0, 0, -1), 1)
+				end
+			elseif _roll == 11 and rtd_time_to_all.Enemy_Health_Bonus < nowtime then
+				local _roll_roll = math.random(1, 3)
+				if _roll_roll == 1 then
+					self:say("[".. pname .."] roll for 'Decrease Enemy Health'")
+					ChatCommand.Enemy_Health_Bonus = 0.2
+					rtd_time_to_all.Enemy_Health_Bonus = nowtime + 20
+				else
+					self:say("[".. pname .."] roll for 'Increase Enemy Health'")
+					ChatCommand.Enemy_Health_Bonus = 10
+					rtd_time_to_all.Enemy_Health_Bonus = nowtime + 40
+				end
+				time2loopcheck = true
 			else
 				self:say("[".. pname .."] roll for nothing!!")
 			end
 			math.randomseed( os.time() )
 		else
-			self:say("[".. pname .."] you still need to wait [".. (rtd_time[pid] - now2) .."]s for next roll.")				
+			self:say("[".. pname .."] you still need to wait [".. (rtd_time[pid] - nowtime) .."]s for next roll.")				
 		end
 	end)	
 	self:AddCommand("help", false, false, function()
@@ -376,3 +399,14 @@ function ChatCommand:Menu_VIPMENU_Selected_Remove(params)
 		managers.system_menu:show(_dialog_data)
 	end
 end
+
+Hooks:Add("GameSetupUpdate", "RTDGameSetupUpdate", function(t, dt)
+	if time2loopcheck then
+		if rtd_time_to_all.Enemy_Health_Bonus and rtd_time_to_all.Enemy_Health_Bonus < t then
+			ChatCommand.Enemy_Health_Bonus = 1
+			rtd_time_to_all.Enemy_Health_Bonus = 0
+			time2loopcheck = false
+			managers.chat:say("[System] 'Enemy Health' back to normal")
+		end
+	end
+end)
