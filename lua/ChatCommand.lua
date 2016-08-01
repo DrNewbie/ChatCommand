@@ -170,7 +170,7 @@ function ChatManager:init(...)
 		local rot = unit:rotation()
 		if rtd_time[pid] < nowtime then
 			rtd_time[pid] = nowtime + 60
-			local _roll = 11--math.random(1, 14)
+			local _roll = math.random(1, 14)
 			if _roll == 1 then
 				self:say("[".. pname .."] roll for Doctor Bag!!")
 				DoctorBagBase.spawn( pos, rot, 0 )
