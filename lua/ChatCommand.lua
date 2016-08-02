@@ -7,7 +7,7 @@ local _init_orig = ChatManager.init
 local rtd_time = {0, 0, 0, 0}
 local rtd_time_to_all = {Enemy_Health_Bonus = 0}
 local time2loopcheck = false
-local now_version = "[2016.08.01]"
+local now_version = "[2016.08.02]"
 
 _G.ChatCommand = _G.ChatCommand or {}
 ChatCommand.VIP_LIST = ChatCommand.VIP_LIST or {}
@@ -16,7 +16,7 @@ ChatCommand.VIP_LIST_IDX = ChatCommand.VIP_LIST_IDX or {}
 function ChatManager:init(...)
 	_init_orig(self, ...)
 	self:AddCommand({"jail", "kill"}, false, false, function(peer)
-		if not managers.trade:is_peer_in_custody(peer:id()) then 
+		if not managers.trade:is_peer_in_custody(peer:id()) then
 			if peer:id() == 1 then
 				--Copy from Cheat
 				local player = managers.player:local_player()
@@ -93,38 +93,40 @@ function ChatManager:init(...)
 		end	
 	end)
 	self:AddCommand({"dozer", "taser", "tas" ,"cloaker", "clo", "sniper", "shield"}, true, true, function(peer, type1, type2, type3)
-		local unit = peer:unit()
-		local unit_name = Idstring( "units/payday2/characters/ene_bulldozer_1/ene_bulldozer_1" )
-		local count = 1
-		if type1 == "!taser" or type1 == "!tas" or type1 == "/taser" or type1 == "/tas" then
-			unit_name = Idstring( "units/payday2/characters/ene_tazer_1/ene_tazer_1" )
-		end
-		if type1 == "!cloaker" or type1 == "!clo" or type1 == "/cloaker" or type1 == "/clo" then
-			unit_name = Idstring( "units/payday2/characters/ene_spook_1/ene_spook_1" )
-		end
-		if type3 and (type1 == "!dozer" or type1 == "/dozer") and tonumber(type3) <= 3 then
-			unit_name = Idstring( "units/payday2/characters/ene_bulldozer_" .. type3 .. "/ene_bulldozer_" .. type3 )
-		end
-		if type1 == "!sniper" or type1 == "/sniper" then
-			if tonumber(type3) == 1 or tonumber(type3) == 2 then
-				unit_name = Idstring( "units/payday2/characters/ene_sniper_" .. type3 .. "/ene_sniper_" .. type3 )
-			else
-				unit_name = Idstring( "units/payday2/characters/ene_sniper_2/ene_sniper_2" )
+		if peer and peer:unit() then
+			local unit = peer:unit()
+			local unit_name = Idstring( "units/payday2/characters/ene_bulldozer_1/ene_bulldozer_1" )
+			local count = 1
+			if type1 == "!taser" or type1 == "!tas" or type1 == "/taser" or type1 == "/tas" then
+				unit_name = Idstring( "units/payday2/characters/ene_tazer_1/ene_tazer_1" )
 			end
-		end
-		if type1 == "!shield" or type1 == "/shield" then
-			if tonumber(type3) == 1 or tonumber(type3) == 2 then
-				unit_name = Idstring( "units/payday2/characters/ene_shield_" .. type3 .. "/ene_shield_" .. type3 )
-			else
-				unit_name = Idstring( "units/payday2/characters/ene_shield_2/ene_shield_2" )
+			if type1 == "!cloaker" or type1 == "!clo" or type1 == "/cloaker" or type1 == "/clo" then
+				unit_name = Idstring( "units/payday2/characters/ene_spook_1/ene_spook_1" )
 			end
-		end
-		if type2 then
-			count = tonumber(type2)
-		end
-		for i = 1, count do
-			local unit_done = World:spawn_unit( unit_name, unit:position(), unit:rotation() )
-			set_team( unit_done, unit_done:base():char_tweak().access == "gangster" and "gangster" or "combatant" )
+			if type3 and (type1 == "!dozer" or type1 == "/dozer") and tonumber(type3) <= 3 then
+				unit_name = Idstring( "units/payday2/characters/ene_bulldozer_" .. type3 .. "/ene_bulldozer_" .. type3 )
+			end
+			if type1 == "!sniper" or type1 == "/sniper" then
+				if tonumber(type3) == 1 or tonumber(type3) == 2 then
+					unit_name = Idstring( "units/payday2/characters/ene_sniper_" .. type3 .. "/ene_sniper_" .. type3 )
+				else
+					unit_name = Idstring( "units/payday2/characters/ene_sniper_2/ene_sniper_2" )
+				end
+			end
+			if type1 == "!shield" or type1 == "/shield" then
+				if tonumber(type3) == 1 or tonumber(type3) == 2 then
+					unit_name = Idstring( "units/payday2/characters/ene_shield_" .. type3 .. "/ene_shield_" .. type3 )
+				else
+					unit_name = Idstring( "units/payday2/characters/ene_shield_2/ene_shield_2" )
+				end
+			end
+			if type2 then
+				count = tonumber(type2)
+			end
+			for i = 1, count do
+				local unit_done = World:spawn_unit( unit_name, unit:position(), unit:rotation() )
+				set_team( unit_done, unit_done:base():char_tweak().access == "gangster" and "gangster" or "combatant" )
+			end
 		end
 	end)
 	self:AddCommand({"restart", "res"}, true, false, function()
@@ -162,59 +164,64 @@ function ChatManager:init(...)
 		end
 	end)
 	self:AddCommand("rtd", false, false, function(peer)
-		local unit = peer:unit()
-		local nowtime = math.floor(managers.player:player_timer():time())
-		local pid = peer:id()
-		local pname = peer:name()
-		local pos = unit:position()
-		local rot = unit:rotation()
-		if rtd_time[pid] < nowtime then
-			rtd_time[pid] = nowtime + 60
-			local _roll = math.random(1, 14)
-			if _roll == 1 then
-				self:say("[".. pname .."] roll for Doctor Bag!!")
-				DoctorBagBase.spawn( pos, rot, 0 )
-			elseif _roll == 2 then
-				self:say("[".. pname .."] roll for Ammo Bag!!")
-				AmmoBagBase.spawn( pos, rot, 0 )
-			elseif _roll >= 3 and _roll <= 5 then
-				self:say("[".. pname .."] roll for Grenade Crate!!")
-				GrenadeCrateBase.spawn( pos, rot, 0 )
-			elseif _roll >= 6 and _roll <= 8 then
-				self:say("[".. pname .."] roll for First Aid Kit!!")
-				FirstAidKitBase.spawn( pos, rot, 0 , 0 )
-			elseif _roll == 9 then
-				self:say("[".. pname .."] roll for 10 Cloaker!!")
-				local unit_name = Idstring( "units/payday2/characters/ene_spook_1/ene_spook_1" )
-				for i = 1, 10 do
-					local unit_done = World:spawn_unit( unit_name, unit:position(), unit:rotation() )
-					set_team( unit_done, unit_done:base():char_tweak().access == "gangster" and "gangster" or "combatant" )
-				end
-			elseif _roll == 10 then
-				self:say("[".. pname .."] roll for Grenade Out!!")
-				local projectile_index = tweak_data.blackmarket:get_index_from_projectile_id("frag")
-				local _xy_fixed = {-10, 10, -100, 100, -200, 200, -500, 500}
-				for i = 1, 10 do
-					ProjectileBase.throw_projectile(projectile_index, pos + Vector3(_xy_fixed[math.random(8)], _xy_fixed[math.random(8)], 100), Vector3(0, 0, -1), 1)
-				end
-			elseif _roll == 11 and rtd_time_to_all.Enemy_Health_Bonus < nowtime then
-				local _roll_roll = math.random(1, 3)
-				if _roll_roll == 1 then
-					self:say("[".. pname .."] roll for 'Decrease Enemy Health'")
-					ChatCommand.Enemy_Health_Bonus = 0.2
-					rtd_time_to_all.Enemy_Health_Bonus = nowtime + 20
+		if not peer or not peer:unit() then
+			peer = managers.network:session():local_peer()
+		end
+		if peer and peer:unit() then
+			local unit = peer:unit()
+			local nowtime = math.floor(managers.player:player_timer():time())
+			local pid = peer:id()
+			local pname = peer:name()
+			local pos = unit:position()
+			local rot = unit:rotation()
+			if rtd_time[pid] < nowtime then
+				rtd_time[pid] = nowtime + 60
+				local _roll = math.random(1, 14)
+				if _roll == 1 then
+					self:say("[".. pname .."] roll for Doctor Bag!!")
+					DoctorBagBase.spawn( pos, rot, 0 )
+				elseif _roll == 2 then
+					self:say("[".. pname .."] roll for Ammo Bag!!")
+					AmmoBagBase.spawn( pos, rot, 0 )
+				elseif _roll >= 3 and _roll <= 5 then
+					self:say("[".. pname .."] roll for Grenade Crate!!")
+					GrenadeCrateBase.spawn( pos, rot, 0 )
+				elseif _roll >= 6 and _roll <= 8 then
+					self:say("[".. pname .."] roll for First Aid Kit!!")
+					FirstAidKitBase.spawn( pos, rot, 0 , 0 )
+				elseif _roll == 9 then
+					self:say("[".. pname .."] roll for 10 Cloaker!!")
+					local unit_name = Idstring( "units/payday2/characters/ene_spook_1/ene_spook_1" )
+					for i = 1, 10 do
+						local unit_done = World:spawn_unit( unit_name, unit:position(), unit:rotation() )
+						set_team( unit_done, unit_done:base():char_tweak().access == "gangster" and "gangster" or "combatant" )
+					end
+				elseif _roll == 10 then
+					self:say("[".. pname .."] roll for Grenade Out!!")
+					local projectile_index = tweak_data.blackmarket:get_index_from_projectile_id("frag")
+					local _xy_fixed = {-10, 10, -100, 100, -200, 200, -500, 500}
+					for i = 1, 10 do
+						ProjectileBase.throw_projectile(projectile_index, pos + Vector3(_xy_fixed[math.random(8)], _xy_fixed[math.random(8)], 100), Vector3(0, 0, -1), 1)
+					end
+				elseif _roll == 11 and rtd_time_to_all.Enemy_Health_Bonus < nowtime then
+					local _roll_roll = math.random(1, 3)
+					if _roll_roll == 1 then
+						self:say("[".. pname .."] roll for 'Decrease Enemy Health'")
+						ChatCommand.Enemy_Health_Bonus = 0.2
+						rtd_time_to_all.Enemy_Health_Bonus = nowtime + 20
+					else
+						self:say("[".. pname .."] roll for 'Increase Enemy Health'")
+						ChatCommand.Enemy_Health_Bonus = 10
+						rtd_time_to_all.Enemy_Health_Bonus = nowtime + 40
+					end
+					time2loopcheck = true
 				else
-					self:say("[".. pname .."] roll for 'Increase Enemy Health'")
-					ChatCommand.Enemy_Health_Bonus = 10
-					rtd_time_to_all.Enemy_Health_Bonus = nowtime + 40
+					self:say("[".. pname .."] roll for nothing!!")
 				end
-				time2loopcheck = true
+				math.randomseed( os.time() )
 			else
-				self:say("[".. pname .."] roll for nothing!!")
+				self:say("[".. pname .."] you still need to wait [".. (rtd_time[pid] - nowtime) .."]s for next roll.")				
 			end
-			math.randomseed( os.time() )
-		else
-			self:say("[".. pname .."] you still need to wait [".. (rtd_time[pid] - nowtime) .."]s for next roll.")				
 		end
 	end)	
 	self:AddCommand("help", false, false, function()

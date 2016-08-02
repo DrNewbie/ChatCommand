@@ -2,7 +2,7 @@
 	"name" : "Chat Command",
 	"author" : "Dr_Newbie",
 	"contact" : "It will do something if you type special command in chat.",
-	"version" : "2016.08.01",
+	"version" : "2016.08.02",
 	"hooks" : [
 		{
 			"hook_id" : "lib/managers/chatmanager",
