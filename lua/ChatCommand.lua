@@ -2,20 +2,15 @@ if Network:is_client() then
 	return
 end
 
-local _receive_message_by_peer_orig = ChatManager.receive_message_by_peer
-local _init_orig = ChatManager.init
-local rtd_time = {0, 0, 0, 0}
-local rtd_time_to_all = {Enemy_Health_Bonus = 0}
-local time2loopcheck = false
-local now_version = "[2016.08.02]"
-
 _G.ChatCommand = _G.ChatCommand or {}
+ChatCommand.now_version = "[2016.11.15]"
+ChatCommand.rtd_time = {0, 0, 0, 0}
 ChatCommand.VIP_LIST = ChatCommand.VIP_LIST or {}
 ChatCommand.VIP_LIST_IDX = ChatCommand.VIP_LIST_IDX or {}
+ChatCommand.time2loopcheck = false
 
-function ChatManager:init(...)
-	_init_orig(self, ...)
-	self:AddCommand({"jail", "kill"}, false, false, function(peer)
+Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
+	cmm:AddCommand({"jail", "kill"}, false, false, function(peer)
 		if not managers.trade:is_peer_in_custody(peer:id()) then
 			if peer:id() == 1 then
 				--Copy from Cheat
@@ -37,7 +32,7 @@ function ChatManager:init(...)
 			end
 		end
 	end)
-	self:AddCommand("add", true, false, function(peer, type1, type2, type3)
+	cmm:AddCommand("add", true, false, function(peer, type1, type2, type3)
 		if not managers.network then
 			_send_msg("Error: !add")
 		else
@@ -46,18 +41,18 @@ function ChatManager:init(...)
 				managers.network:session():peer(3) or nil,
 				managers.network:session():peer(4) or nil }
 			if (type2 ~= "1" and type2 ~= "2" and type2 ~= "3" and type2 ~= "4") or type3 ~= "ok" then
-				self:say("You need to use [!add <id 1-4> ok] for adding new VIP.")
+				cmm:say("You need to use [!add <id 1-4> ok] for adding new VIP.")
 				if now_peer[1] then
-					self:say("1: " .. now_peer[1]:name())
+					cmm:say("1: " .. now_peer[1]:name())
 				end
 				if now_peer[2] then
-					self:say("2: " .. now_peer[2]:name())
+					cmm:say("2: " .. now_peer[2]:name())
 				end
 				if now_peer[3] then
-					self:say("3: " .. now_peer[3]:name())
+					cmm:say("3: " .. now_peer[3]:name())
 				end
 				if now_peer[4] then
-					self:say("4: " .. now_peer[4]:name())
+					cmm:say("4: " .. now_peer[4]:name())
 				end
 			else
 				local file, err = io.open("mods/ChatCommand/vip_list.txt", "a")
@@ -65,34 +60,34 @@ function ChatManager:init(...)
 					local idx = tonumber(type2)
 					if now_peer[idx] then
 						file:write("" .. now_peer[idx]:user_id(), "\n")
-						self:say("Host change [" .. now_peer[idx]:name() .."] to VIP")
+						cmm:say("Host change [" .. now_peer[idx]:name() .."] to VIP")
 					end
 					file:close()
 					Read_VIP_List()
 				else
-					self:say("Try again")
+					cmm:say("Try again")
 				end
 			end
 		end
 	end)
-	self:AddCommand({"donate", "d"}, false, false, function()
+	cmm:AddCommand({"donate", "d"}, false, false, function()
 		local file, err = io.open("mods/ChatCommand/donate_msg.txt", "r")
 		if file then
 			local line = file:read()
 			while line do
-				self:say(tostring(line))
+				cmm:say(tostring(line))
 				line = file:read()
 			end
 		end
 		file:close()
 	end)
-	self:AddCommand("loud", true, false, function()
+	cmm:AddCommand("loud", true, false, function()
 		if managers.groupai and managers.groupai:state() and managers.groupai:state():whisper_mode() then
 			managers.groupai:state():on_police_called("alarm_pager_hang_up")
 			managers.hud:show_hint( { text = "LOUD!" } )
 		end	
 	end)
-	self:AddCommand({"dozer", "taser", "tas" ,"cloaker", "clo", "sniper", "shield"}, true, true, function(peer, type1, type2, type3)
+	cmm:AddCommand({"dozer", "taser", "tas" ,"cloaker", "clo", "sniper", "shield", "medic"}, true, true, function(peer, type1, type2, type3)
 		if peer and peer:unit() then
 			local unit = peer:unit()
 			local unit_name = Idstring( "units/payday2/characters/ene_bulldozer_1/ene_bulldozer_1" )
@@ -120,16 +115,23 @@ function ChatManager:init(...)
 					unit_name = Idstring( "units/payday2/characters/ene_shield_2/ene_shield_2" )
 				end
 			end
+			if type1 == "!medic" or type1 == "/medic" then
+				if tonumber(type3) == 2 then
+					unit_name = Idstring("units/payday2/characters/ene_medic_m4/ene_medic_m4")
+				else
+					unit_name = Idstring("units/payday2/characters/ene_medic_r870/ene_medic_r870")
+				end
+			end
 			if type2 then
 				count = tonumber(type2)
 			end
 			for i = 1, count do
 				local unit_done = World:spawn_unit( unit_name, unit:position(), unit:rotation() )
-				set_team( unit_done, unit_done:base():char_tweak().access == "gangster" and "gangster" or "combatant" )
+				ChatCommand:set_team( unit_done, unit_done:base():char_tweak().access == "gangster" and "gangster" or "combatant" )
 			end
 		end
 	end)
-	self:AddCommand({"restart", "res"}, true, false, function()
+	cmm:AddCommand({"restart", "res"}, true, false, function()
 		--Copy from Quick/Instant restart 1.0 by: FishTaco
 		local all_synced = true
 		for k,v in pairs(managers.network:session():peers()) do
@@ -141,96 +143,97 @@ function ChatManager:init(...)
 			managers.game_play_central:restart_the_game()
 		end	
 	end)
-	self:AddCommand({"vipmenu"}, true, false, function()
+	cmm:AddCommand({"vipmenu"}, true, false, function()
 		ChatCommand:Menu_VIPMENU()
 	end)
-	self:AddCommand({"version", "ver"}, false, false, function()
-		self:say("Current version is " .. now_version)
-		self:say("More Info: http://goo.gl/W25Izf")
-		self:say("Donate Me: http://goo.gl/mlFXAD")
+	cmm:AddCommand({"version", "ver"}, false, false, function()
+		cmm:say("Current version is " .. ChatCommand.now_version)
+		cmm:say("More Info: http://goo.gl/W25Izf")
+		cmm:say("Donate Me: http://goo.gl/mlFXAD")
 	end)	
-	self:AddCommand("end", true, false, function()
+	cmm:AddCommand("end", true, false, function()
 		if game_state_machine:current_state_name() ~= "disconnected" then
 			MenuCallbackHandler:load_start_menu_lobby()
 		end	
 	end)
-	self:AddCommand("vip", false, false, function(peer)
-		if is_VIP(peer) then
-			self:say("[".. peer:name() .."] is VIP")
+	cmm:AddCommand("vip", false, false, function(peer)
+		if ChatCommand:is_VIP(peer) then
+			cmm:say("[".. peer:name() .."] is VIP")
 		elseif peer:id() == 1 then
-			self:say("[".. peer:name() .."] is Host")
+			cmm:say("[".. peer:name() .."] is Host")
 		else
-			self:say("[".. peer:name() .."] is Normal player")
+			cmm:say("[".. peer:name() .."] is Normal player")
 		end
 	end)
-	self:AddCommand("rtd", false, false, function(peer)
+	cmm:AddCommand("rtd", false, false, function(peer)
 		if not peer or not peer:unit() then
 			peer = managers.network:session():local_peer()
 		end
 		if peer and peer:unit() then
 			local unit = peer:unit()
-			local nowtime = math.floor(managers.player:player_timer():time())
+			local nowtime = math.floor(TimerManager:game():time())
 			local pid = peer:id()
 			local pname = peer:name()
 			local pos = unit:position()
 			local rot = unit:rotation()
-			if rtd_time[pid] < nowtime then
-				rtd_time[pid] = nowtime + 60
+			if ChatCommand.rtd_time[pid] < nowtime then
+				ChatCommand.rtd_time[pid] = nowtime + 60
 				local _roll = math.random(1, 14)
 				if _roll == 1 then
-					self:say("[".. pname .."] roll for Doctor Bag!!")
+					cmm:say("[".. pname .."] roll for Doctor Bag!!")
 					DoctorBagBase.spawn( pos, rot, 0 )
 				elseif _roll == 2 then
-					self:say("[".. pname .."] roll for Ammo Bag!!")
+					cmm:say("[".. pname .."] roll for Ammo Bag!!")
 					AmmoBagBase.spawn( pos, rot, 0 )
 				elseif _roll >= 3 and _roll <= 5 then
-					self:say("[".. pname .."] roll for Grenade Crate!!")
+					cmm:say("[".. pname .."] roll for Grenade Crate!!")
 					GrenadeCrateBase.spawn( pos, rot, 0 )
 				elseif _roll >= 6 and _roll <= 8 then
-					self:say("[".. pname .."] roll for First Aid Kit!!")
+					cmm:say("[".. pname .."] roll for First Aid Kit!!")
 					FirstAidKitBase.spawn( pos, rot, 0 , 0 )
 				elseif _roll == 9 then
-					self:say("[".. pname .."] roll for 10 Cloaker!!")
+					cmm:say("[".. pname .."] roll for 10 Cloaker!!")
 					local unit_name = Idstring( "units/payday2/characters/ene_spook_1/ene_spook_1" )
 					for i = 1, 10 do
 						local unit_done = World:spawn_unit( unit_name, unit:position(), unit:rotation() )
-						set_team( unit_done, unit_done:base():char_tweak().access == "gangster" and "gangster" or "combatant" )
+						ChatCommand:set_team( unit_done, unit_done:base():char_tweak().access == "gangster" and "gangster" or "combatant" )
 					end
 				elseif _roll == 10 then
-					self:say("[".. pname .."] roll for Grenade Out!!")
+					cmm:say("[".. pname .."] roll for Grenade Out!!")
 					local projectile_index = tweak_data.blackmarket:get_index_from_projectile_id("frag")
 					local _xy_fixed = {-10, 10, -100, 100, -200, 200, -500, 500}
 					for i = 1, 10 do
-						ProjectileBase.throw_projectile(projectile_index, pos + Vector3(_xy_fixed[math.random(8)], _xy_fixed[math.random(8)], 100), Vector3(0, 0, -1), 1)
+						ProjectileBase.throw_projectile(projectile_index, pos + Vector3(_xy_fixed[math.random(8)], _xy_fixed[math.random(8)], 50), Vector3(0, 0, -1), 1)
 					end
-				elseif _roll == 11 and rtd_time_to_all.Enemy_Health_Bonus < nowtime then
-					local _roll_roll = math.random(1, 3)
-					if _roll_roll == 1 then
-						self:say("[".. pname .."] roll for 'Decrease Enemy Health'")
-						ChatCommand.Enemy_Health_Bonus = 0.2
-						rtd_time_to_all.Enemy_Health_Bonus = nowtime + 20
-					else
-						self:say("[".. pname .."] roll for 'Increase Enemy Health'")
-						ChatCommand.Enemy_Health_Bonus = 10
-						rtd_time_to_all.Enemy_Health_Bonus = nowtime + 40
+				elseif _roll == 11 then
+					cmm:say("[".. pname .."] roll for Bomb this Area!!")
+					local projectile_index = tweak_data.blackmarket:get_index_from_projectile_id("frag")
+					local _start_pos = pos + Vector3(-2000, -2000, 0)
+					local _d = tweak_data.blackmarket.projectiles.frag.time_cheat or 0.05
+					ChatCommand.time2loopcheck = true
+					ChatCommand.throw_projectile = {}
+					for i = 1, 10 do
+						for j = 1, 10 do
+							local _table_size = table.size(ChatCommand.throw_projectile) + 1
+							table.insert(ChatCommand.throw_projectile, {enable = true, projectile_index = projectile_index, pos = _start_pos + Vector3(i*400, j*400, 50), time_do = nowtime + 3 + _d*_table_size})
+						end
 					end
-					time2loopcheck = true
 				else
-					self:say("[".. pname .."] roll for nothing!!")
+					cmm:say("[".. pname .."] roll for nothing!!")
 				end
 				math.randomseed( os.time() )
 			else
-				self:say("[".. pname .."] you still need to wait [".. (rtd_time[pid] - nowtime) .."]s for next roll.")				
+				cmm:say("[".. pname .."] you still need to wait [".. (ChatCommand.rtd_time[pid] - nowtime) .."]s for next roll.")				
 			end
 		end
 	end)	
-	self:AddCommand("help", false, false, function()
-		self:say("[!rtd: Roll something special]")
-		self:say("[!jail: Send yourself to jail]")
-		self:say("[!vip: Let you know your level]")
-		self:say("[!version: Tell something about this MOD]")
+	cmm:AddCommand("help", false, false, function()
+		cmm:say("[!rtd: Roll something special]")
+		cmm:say("[!jail: Send yourself to jail]")
+		cmm:say("[!vip: Let you know your level]")
+		cmm:say("[!version: Tell something about this MOD]")
 	end)
-end
+end)
 function ChatManager:say(_msg, _msg2)
 	if _msg then
 		managers.chat:send_message(ChatManager.GAME, "", tostring(_msg))
@@ -239,25 +242,31 @@ function ChatManager:say(_msg, _msg2)
 		managers.chat:send_message(ChatManager.GAME, "", tostring(_msg))
 	end
 end
-function ChatManager:receive_message_by_peer(channel_id, peer, message)
-	_receive_message_by_peer_orig(self, channel_id, peer, message)
+
+Hooks:PostHook(ChatManager, "receive_message_by_peer", "ChatCommand_Active", function(cmm, channel_id, peer, message)
+	local is_run_by_Host = function ()
+		if not Network then
+			return false
+		end
+		return not Network:is_client()
+	end
 	local commad = string.lower(tostring(message))
 	local _is_Host = peer:id() == 1 --HOST
-	local _is_VIP = is_VIP(peer) --VIP
+	local _is_VIP = ChatCommand:is_VIP(peer) --VIP
 	local _is_rHost = is_run_by_Host() --Is this only run by Host
 	local type1, type2, type3 = unpack(commad:split(" "))
 	if Utils:IsInHeist() and _is_rHost then
-		if type1 and (type1:sub(1,1) == "!" or type1:sub(1,1) == "/") and self._commands and self._commands[string.lower(type1)] then
-			if (self._commands[string.lower(type1)].ishost and _is_Host) or (self._commands[string.lower(type1)].isvip and _is_VIP) or (not self._commands[string.lower(type1)].ishost and not self._commands[string.lower(type1)].isvip) then
-				self._commands[string.lower(type1)].func(peer, type1, type2, type3)
+		if type1 and (type1:sub(1,1) == "!" or type1:sub(1,1) == "/") and cmm._commands and cmm._commands[string.lower(type1)] then
+			if (cmm._commands[string.lower(type1)].ishost and _is_Host) or (cmm._commands[string.lower(type1)].isvip and _is_VIP) or (not cmm._commands[string.lower(type1)].ishost and not cmm._commands[string.lower(type1)].isvip) then
+				cmm._commands[string.lower(type1)].func(peer, type1, type2, type3)
 			else 
-				self:say("You don't have premission to use this command")
+				cmm:say("You don't have premission to use this command")
 			end
 		elseif type1 and (type1:sub(1,1) == "!" or type1:sub(1,1) == "/") then
-			self:say("The command: " .. type1 .. " doesn't exist")
+			cmm:say("The command: " .. type1 .. " doesn't exist")
 		end
 	end
-end
+end)
 
 function ChatManager:AddCommand(cmd, ishost, isvip, func)
 	if not self._commands then
@@ -288,7 +297,7 @@ function ChatManager:AddCommand(cmd, ishost, isvip, func)
 	end
 end
 
-function is_VIP(peer)
+function ChatCommand:is_VIP(peer)
 	local line = tostring(peer:user_id())
 	if ChatCommand.VIP_LIST[line] then
 		return true
@@ -297,7 +306,7 @@ function is_VIP(peer)
 	end
 end
 
-function Read_VIP_List()
+function ChatCommand:Read_VIP_List()
 	local file, err = io.open("mods/ChatCommand/vip_list.txt", "r")
 	ChatCommand.VIP_LIST = {}
 	ChatCommand.VIP_LIST_IDX = {}
@@ -317,20 +326,9 @@ function Read_VIP_List()
 	end
 end
 
-Read_VIP_List()
+ChatCommand:Read_VIP_List()
 
-function is_run_by_Host()
-	if not Network then return false end
-	return not Network:is_client()
-end
-
-function isPlaying()
-	if not BaseNetworkHandler then return false end
-	return BaseNetworkHandler._gamestate_filter.any_ingame_playing[ game_state_machine:last_queued_state_name() ]
-end
-
---Copy from Cheat
-function set_team( unit, team )
+function ChatCommand:set_team( unit, team )
 	local M_groupAI = managers.groupai
 	local AIState = M_groupAI:state()	
 	local team_id = tweak_data.levels:get_default_team_ID( team )
@@ -408,12 +406,18 @@ function ChatCommand:Menu_VIPMENU_Selected_Remove(params)
 end
 
 Hooks:Add("GameSetupUpdate", "RTDGameSetupUpdate", function(t, dt)
-	if time2loopcheck then
-		if rtd_time_to_all.Enemy_Health_Bonus and rtd_time_to_all.Enemy_Health_Bonus < t then
-			ChatCommand.Enemy_Health_Bonus = 1
-			rtd_time_to_all.Enemy_Health_Bonus = 0
-			time2loopcheck = false
-			managers.chat:say("[System] 'Enemy Health' back to normal")
+	if ChatCommand.time2loopcheck then
+		local nowtime = TimerManager:game():time()
+		ChatCommand.throw_projectile = ChatCommand.throw_projectile or {}
+		for id, data in pairs(ChatCommand.throw_projectile) do
+			if data.enable and type(data.time_do) == "number" and nowtime > data.time_do then
+				ChatCommand.throw_projectile[id].enable = false
+				ProjectileBase.throw_projectile(data.projectile_index, data.pos, Vector3(0, 0, -1), 1)
+				ChatCommand.throw_projectile[id] = {}
+			end
+		end
+		if table.size(ChatCommand.throw_projectile) <= 0 then
+			ChatCommand.time2loopcheck = false
 		end
 	end
 end)
