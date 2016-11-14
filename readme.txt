@@ -4,4 +4,4 @@ This Mod will do something like TF2's community server ''chat commands'',
 
 it will do special work when you talk right message in your chat.
 
-http://downloads.lastbullet.net/14774
+http://modwork.shop/14774
