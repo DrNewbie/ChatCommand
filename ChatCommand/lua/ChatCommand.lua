@@ -3,7 +3,7 @@ if Network:is_client() then
 end
 
 _G.ChatCommand = _G.ChatCommand or {}
-ChatCommand.now_version = "[2017.01.23]"
+ChatCommand.now_version = "[2017.01.23+]"
 ChatCommand.rtd_time = {0, 0, 0, 0}
 ChatCommand.rtd_delay = 60
 ChatCommand.VIP_LIST = ChatCommand.VIP_LIST or {}
@@ -219,8 +219,12 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 							table.insert(ChatCommand.throw_projectile, {enable = true, projectile_index = projectile_index, pos = _start_pos + Vector3(i*400, j*400, 50), time_do = nowtime + 3 + _d*_table_size})
 						end
 					end
-				elseif _roll == 12 then
-					cmm:say("[".. pname .."] roll for Flash this Area!!")
+				elseif _roll == 12 or _roll == 13 then
+					if _roll == 13 then
+						cmm:say("[".. pname .."] roll for Smoke this Area!!")
+					elseif _roll == 12 then
+						cmm:say("[".. pname .."] roll for Flash this Area!!")
+					end
 					local _start_pos = pos + Vector3(-2000, -2000, 0)
 					local _d = tweak_data.blackmarket.projectiles.frag.time_cheat or 0.05
 					ChatCommand.time2loopcheck = true
@@ -228,7 +232,7 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 					for i = 1, 10 do
 						for j = 1, 10 do
 							local _table_size = table.size(ChatCommand.throw_flash) + 1
-							table.insert(ChatCommand.throw_flash, {enable = true, pos = _start_pos + Vector3(i*400, j*400, 50), time_do = nowtime + 3 + _d*_table_size})
+							table.insert(ChatCommand.throw_flash, {enable = true, is_smoke = (_roll == 12 and true or false), pos = _start_pos + Vector3(i*400, j*400, 50), time_do = nowtime + 3 + _d*_table_size})
 						end
 					end
 				else
@@ -433,8 +437,8 @@ Hooks:Add("GameSetupUpdate", "RTDGameSetupUpdate", function(t, dt)
 			for id, data in pairs(ChatCommand.throw_flash) do
 				if data.enable and type(data.time_do) == "number" and nowtime > data.time_do then
 					ChatCommand.throw_flash[id].enable = false
-					managers.network:session():send_to_peers_synched("sync_smoke_grenade", data.pos, data.pos, 3, true)
-					managers.groupai:state():sync_smoke_grenade(data.pos, data.pos, 3, true)
+					managers.network:session():send_to_peers_synched("sync_smoke_grenade", data.pos, data.pos, 6, data.is_smoke)
+					managers.groupai:state():sync_smoke_grenade(data.pos, data.pos, 6, data.is_smoke)
 					ChatCommand.throw_flash[id] = {}
 				end
 			end
