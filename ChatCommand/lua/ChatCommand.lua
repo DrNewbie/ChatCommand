@@ -3,8 +3,9 @@ if Network:is_client() then
 end
 
 _G.ChatCommand = _G.ChatCommand or {}
-ChatCommand.now_version = "[2016.11.15]"
+ChatCommand.now_version = "[2017.01.23]"
 ChatCommand.rtd_time = {0, 0, 0, 0}
+ChatCommand.rtd_delay = 60
 ChatCommand.VIP_LIST = ChatCommand.VIP_LIST or {}
 ChatCommand.VIP_LIST_IDX = ChatCommand.VIP_LIST_IDX or {}
 ChatCommand.time2loopcheck = false
@@ -148,7 +149,7 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 	end)
 	cmm:AddCommand({"version", "ver"}, false, false, function()
 		cmm:say("Current version is " .. ChatCommand.now_version)
-		cmm:say("More Info: http://goo.gl/W25Izf")
+		cmm:say("More Info: http://t.im/chatcommand")
 		cmm:say("Donate Me: http://goo.gl/mlFXAD")
 	end)	
 	cmm:AddCommand("end", true, false, function()
@@ -177,8 +178,8 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 			local pos = unit:position()
 			local rot = unit:rotation()
 			if ChatCommand.rtd_time[pid] < nowtime then
-				ChatCommand.rtd_time[pid] = nowtime + 60
-				local _roll = math.random(1, 14)
+				ChatCommand.rtd_time[pid] = nowtime + ChatCommand.rtd_delay
+				local _roll = math.random(1, 16)
 				if _roll == 1 then
 					cmm:say("[".. pname .."] roll for Doctor Bag!!")
 					DoctorBagBase.spawn( pos, rot, 0 )
@@ -216,6 +217,18 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 						for j = 1, 10 do
 							local _table_size = table.size(ChatCommand.throw_projectile) + 1
 							table.insert(ChatCommand.throw_projectile, {enable = true, projectile_index = projectile_index, pos = _start_pos + Vector3(i*400, j*400, 50), time_do = nowtime + 3 + _d*_table_size})
+						end
+					end
+				elseif _roll == 12 then
+					cmm:say("[".. pname .."] roll for Flash this Area!!")
+					local _start_pos = pos + Vector3(-2000, -2000, 0)
+					local _d = tweak_data.blackmarket.projectiles.frag.time_cheat or 0.05
+					ChatCommand.time2loopcheck = true
+					ChatCommand.throw_flash = {}
+					for i = 1, 10 do
+						for j = 1, 10 do
+							local _table_size = table.size(ChatCommand.throw_flash) + 1
+							table.insert(ChatCommand.throw_flash, {enable = true, pos = _start_pos + Vector3(i*400, j*400, 50), time_do = nowtime + 3 + _d*_table_size})
 						end
 					end
 				else
@@ -299,7 +312,7 @@ end
 
 function ChatCommand:is_VIP(peer)
 	local line = tostring(peer:user_id())
-	if ChatCommand.VIP_LIST[line] then
+	if self.VIP_LIST[line] then
 		return true
 	else
 		return false
@@ -308,17 +321,17 @@ end
 
 function ChatCommand:Read_VIP_List()
 	local file, err = io.open("mods/ChatCommand/vip_list.txt", "r")
-	ChatCommand.VIP_LIST = {}
-	ChatCommand.VIP_LIST_IDX = {}
+	self.VIP_LIST = {}
+	self.VIP_LIST_IDX = {}
 	if file then
 		local line = file:read()
 		local count = 0
 		while line do
 			line = tostring(line)
-			if not ChatCommand.VIP_LIST[line] then
+			if not self.VIP_LIST[line] then
 				count = count + 1
-				ChatCommand.VIP_LIST[line] = count
-				table.insert(ChatCommand.VIP_LIST_IDX, line)
+				self.VIP_LIST[line] = count
+				table.insert(self.VIP_LIST_IDX, line)
 			end
 			line = file:read()
 		end
@@ -339,7 +352,7 @@ function ChatCommand:Menu_VIPMENU(params)
 	local opts = {}
 	local start = params and params.start or 0
 	start = start >= 0 and start or 0
-	for k, v in pairs(ChatCommand.VIP_LIST_IDX or {}) do
+	for k, v in pairs(self.VIP_LIST_IDX or {}) do
 		if k > start then
 			opts[#opts+1] = { text = "" .. v .. "", callback_func = callback(self, self, "Menu_VIPMENU_Selected", {id = tostring(v)}) }
 		end
@@ -380,13 +393,13 @@ end
 
 function ChatCommand:Menu_VIPMENU_Selected_View(params)
 	Steam:overlay_activate("url", "http://steamcommunity.com/profiles/" .. params.id)
-	ChatCommand:Menu_VIPMENU_Selected({id = params.id})
+	self:Menu_VIPMENU_Selected({id = params.id})
 end
 
 function ChatCommand:Menu_VIPMENU_Selected_Remove(params)
 	local file, err = io.open("mods/ChatCommand/vip_list.txt", "w")
 	if file then
-		for k, v in pairs(ChatCommand.VIP_LIST_IDX or {}) do
+		for k, v in pairs(self.VIP_LIST_IDX or {}) do
 			if tostring(v) ~= tostring(params.id) then
 				file:write(tostring(v) .. "\n")			
 			end
@@ -409,14 +422,23 @@ Hooks:Add("GameSetupUpdate", "RTDGameSetupUpdate", function(t, dt)
 	if ChatCommand.time2loopcheck then
 		local nowtime = TimerManager:game():time()
 		ChatCommand.throw_projectile = ChatCommand.throw_projectile or {}
-		for id, data in pairs(ChatCommand.throw_projectile) do
-			if data.enable and type(data.time_do) == "number" and nowtime > data.time_do then
-				ChatCommand.throw_projectile[id].enable = false
-				ProjectileBase.throw_projectile(data.projectile_index, data.pos, Vector3(0, 0, -1), 1)
-				ChatCommand.throw_projectile[id] = {}
+			for id, data in pairs(ChatCommand.throw_projectile) do
+				if data.enable and type(data.time_do) == "number" and nowtime > data.time_do then
+					ChatCommand.throw_projectile[id].enable = false
+					ProjectileBase.throw_projectile(data.projectile_index, data.pos, Vector3(0, 0, -1), 1)
+					ChatCommand.throw_projectile[id] = {}
+				end
 			end
-		end
-		if table.size(ChatCommand.throw_projectile) <= 0 then
+		ChatCommand.throw_flash = ChatCommand.throw_flash or {}
+			for id, data in pairs(ChatCommand.throw_flash) do
+				if data.enable and type(data.time_do) == "number" and nowtime > data.time_do then
+					ChatCommand.throw_flash[id].enable = false
+					managers.network:session():send_to_peers_synched("sync_smoke_grenade", data.pos, data.pos, 3, true)
+					managers.groupai:state():sync_smoke_grenade(data.pos, data.pos, 3, true)
+					ChatCommand.throw_flash[id] = {}
+				end
+			end
+		if table.size(ChatCommand.throw_flash) <= 0 and table.size(ChatCommand.throw_projectile) <= 0 then
 			ChatCommand.time2loopcheck = false
 		end
 	end
