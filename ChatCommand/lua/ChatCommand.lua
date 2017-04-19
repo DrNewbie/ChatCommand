@@ -148,6 +148,9 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 		end
 	end)
 	cmm:AddCommand({"restart", "res"}, true, false, function()
+		if managers.crime_spree:_is_active() then
+			return
+		end
 		--Copy from Quick/Instant restart 1.0 by: FishTaco
 		local all_synced = true
 		for k,v in pairs(managers.network:session():peers()) do
@@ -157,7 +160,7 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 		end
 		if all_synced then
 			managers.game_play_central:restart_the_game()
-		end	
+		end
 	end)
 	cmm:AddCommand({"vipmenu"}, true, false, function()
 		ChatCommand:Menu_VIPMENU()
