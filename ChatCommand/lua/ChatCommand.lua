@@ -3,12 +3,28 @@ if Network:is_client() then
 end
 
 _G.ChatCommand = _G.ChatCommand or {}
-ChatCommand.now_version = "[2017.01.23+]"
+ChatCommand.now_version = "[2017.04.19]"
 ChatCommand.rtd_time = {0, 0, 0, 0}
 ChatCommand.rtd_delay = 60
 ChatCommand.VIP_LIST = ChatCommand.VIP_LIST or {}
 ChatCommand.VIP_LIST_IDX = ChatCommand.VIP_LIST_IDX or {}
 ChatCommand.time2loopcheck = false
+ChatCommand.rtd_Hydra_bool = false
+ChatCommand.rtd_Hydra_wait4do = {}
+ChatCommand.rtd_Hydra_listdone = false
+ChatCommand.rtd_Hydra_Split = 2
+ChatCommand.rtd_roll_rate = {
+	20, --Doctor Bag
+	20, --Ammo Bag
+	35, --Grenade Crate
+	35, --First Aid Kit
+	10, --Cloaker
+	10, --Grenade Out
+	10, --Bomb this Area
+	10, --Smoke\Flash this Area
+	10, --Hydra
+	40 --NONE
+}
 
 Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 	cmm:AddCommand({"jail", "kill"}, false, false, function(peer)
@@ -127,8 +143,7 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 				count = tonumber(type2)
 			end
 			for i = 1, count do
-				local unit_done = World:spawn_unit( unit_name, unit:position(), unit:rotation() )
-				ChatCommand:set_team( unit_done, unit_done:base():char_tweak().access == "gangster" and "gangster" or "combatant" )
+				ChatCommand:spawn_enemy(unit_name, unit:position(), unit:rotation())
 			end
 		end
 	end)
@@ -179,34 +194,58 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 			local rot = unit:rotation()
 			if ChatCommand.rtd_time[pid] < nowtime then
 				ChatCommand.rtd_time[pid] = nowtime + ChatCommand.rtd_delay
-				local _roll = math.random(1, 16)
-				if _roll == 1 then
+				local _roll_rate = ChatCommand.rtd_roll_rate
+				local _roll_rate_toal = 0
+				for _, v in pairs(_roll_rate) do
+					_roll_rate_toal = _roll_rate_toal + v
+				end
+				local _roll_get = math.random(1, _roll_rate_toal)
+				_roll_rate_toal = 0
+				local _roll_ans = 0
+				for _, v in pairs(_roll_rate) do
+					_roll_ans = _roll_ans + 1
+					if _roll_get >= _roll_rate_toal and _roll_get < _roll_rate_toal + v then
+						break
+					end
+					_roll_rate_toal = _roll_rate_toal + v
+				end
+				if _roll_ans == 1 then
 					cmm:say("[".. pname .."] roll for Doctor Bag!!")
 					DoctorBagBase.spawn( pos, rot, 0 )
-				elseif _roll == 2 then
+				elseif _roll_ans == 2 then
 					cmm:say("[".. pname .."] roll for Ammo Bag!!")
 					AmmoBagBase.spawn( pos, rot, 0 )
-				elseif _roll >= 3 and _roll <= 5 then
+				elseif _roll_ans == 3 then
 					cmm:say("[".. pname .."] roll for Grenade Crate!!")
 					GrenadeCrateBase.spawn( pos, rot, 0 )
-				elseif _roll >= 6 and _roll <= 8 then
+				elseif _roll_ans == 4 then
 					cmm:say("[".. pname .."] roll for First Aid Kit!!")
 					FirstAidKitBase.spawn( pos, rot, 0 , 0 )
-				elseif _roll == 9 then
-					cmm:say("[".. pname .."] roll for 10 Cloaker!!")
+				elseif _roll_ans == 5 then
+					cmm:say("[".. pname .."] roll for Cloaker!!")
 					local unit_name = Idstring( "units/payday2/characters/ene_spook_1/ene_spook_1" )
-					for i = 1, 10 do
-						local unit_done = World:spawn_unit( unit_name, unit:position(), unit:rotation() )
-						ChatCommand:set_team( unit_done, unit_done:base():char_tweak().access == "gangster" and "gangster" or "combatant" )
+					local _xy_fixed = {
+						Vector3(100, 100, 0),
+						Vector3(-100, -100, 0),
+						Vector3(100, -100, 0),
+						Vector3(-100, 100, 0),
+						Vector3(0, 100, 0),
+						Vector3(0, -100, 0),
+						Vector3(100, 0, 0),
+						Vector3(-100, 0, 0),
+						Vector3(0, 0, 100),
+					}
+					for i = 1, 9 do
+						ChatCommand:spawn_enemy(unit_name, pos + _xy_fixed[i], rot)
 					end
-				elseif _roll == 10 then
+				elseif _roll_ans == 6 then
 					cmm:say("[".. pname .."] roll for Grenade Out!!")
 					local projectile_index = tweak_data.blackmarket:get_index_from_projectile_id("frag")
 					local _xy_fixed = {-10, 10, -100, 100, -200, 200, -500, 500}
 					for i = 1, 10 do
 						ProjectileBase.throw_projectile(projectile_index, pos + Vector3(_xy_fixed[math.random(8)], _xy_fixed[math.random(8)], 50), Vector3(0, 0, -1), 1)
 					end
-				elseif _roll == 11 then
+				elseif _roll_ans == 7 then
 					cmm:say("[".. pname .."] roll for Bomb this Area!!")
 					local projectile_index = tweak_data.blackmarket:get_index_from_projectile_id("frag")
 					local _start_pos = pos + Vector3(-2000, -2000, 0)
@@ -219,10 +258,12 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 							table.insert(ChatCommand.throw_projectile, {enable = true, projectile_index = projectile_index, pos = _start_pos + Vector3(i*400, j*400, 50), time_do = nowtime + 3 + _d*_table_size})
 						end
 					end
-				elseif _roll == 12 or _roll == 13 then
-					if _roll == 13 then
+				elseif _roll_ans == 8 then
+					local _flash_bool = false
+					if math.random() > 0.5 then
 						cmm:say("[".. pname .."] roll for Smoke this Area!!")
-					elseif _roll == 12 then
+					else
+						_flash_bool = true
 						cmm:say("[".. pname .."] roll for Flash this Area!!")
 					end
 					local _start_pos = pos + Vector3(-2000, -2000, 0)
@@ -232,16 +273,21 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 					for i = 1, 10 do
 						for j = 1, 10 do
 							local _table_size = table.size(ChatCommand.throw_flash) + 1
-							table.insert(ChatCommand.throw_flash, {enable = true, is_smoke = (_roll == 12 and true or false), pos = _start_pos + Vector3(i*400, j*400, 50), time_do = nowtime + 3 + _d*_table_size})
+							table.insert(ChatCommand.throw_flash, {enable = true, is_smoke = _flash_bool, pos = _start_pos + Vector3(i*400, j*400, 50), time_do = nowtime + 3 + _d*_table_size})
 						end
 					end
+				elseif _roll_ans == 9 then
+					cmm:say("[".. pname .."] roll for Hydra!!")
+					ChatCommand.rtd_Hydra_bool = true
+					ChatCommand.rtd_Hydra_listdone = false
+					ChatCommand.rtd_Hydra_wait4do = {}
 				else
 					cmm:say("[".. pname .."] roll for nothing!!")
 				end
-				math.randomseed( os.time() )
 			else
 				cmm:say("[".. pname .."] you still need to wait [".. (ChatCommand.rtd_time[pid] - nowtime) .."]s for next roll.")				
 			end
+			math.randomseed(tostring(os.time()):reverse():sub(1, 6))
 		end
 	end)	
 	cmm:AddCommand("help", false, false, function()
@@ -345,11 +391,13 @@ end
 
 ChatCommand:Read_VIP_List()
 
-function ChatCommand:set_team( unit, team )
-	local M_groupAI = managers.groupai
-	local AIState = M_groupAI:state()	
-	local team_id = tweak_data.levels:get_default_team_ID( team )
-	unit:movement():set_team( AIState:team_data( team_id ) )
+function ChatCommand:spawn_enemy(unit_name, pos, rot)
+	local unit_done = safe_spawn_unit(unit_name, pos, rot)
+
+	local team_id = tweak_data.levels:get_default_team_ID(unit_done:base():char_tweak().access == "gangster" and "gangster" or "combatant")
+	unit_done:movement():set_team(managers.groupai:state():team_data( team_id ))
+	managers.groupai:state():assign_enemy_to_group_ai(unit_done, team_id)
+	return unit_done
 end
 
 function ChatCommand:Menu_VIPMENU(params)
@@ -423,8 +471,11 @@ function ChatCommand:Menu_VIPMENU_Selected_Remove(params)
 end
 
 Hooks:Add("GameSetupUpdate", "RTDGameSetupUpdate", function(t, dt)
+	if not Utils:IsInHeist() then
+		return
+	end
+	local nowtime = TimerManager:game():time()
 	if ChatCommand.time2loopcheck then
-		local nowtime = TimerManager:game():time()
 		ChatCommand.throw_projectile = ChatCommand.throw_projectile or {}
 			for id, data in pairs(ChatCommand.throw_projectile) do
 				if data.enable and type(data.time_do) == "number" and nowtime > data.time_do then
@@ -444,6 +495,47 @@ Hooks:Add("GameSetupUpdate", "RTDGameSetupUpdate", function(t, dt)
 			end
 		if table.size(ChatCommand.throw_flash) <= 0 and table.size(ChatCommand.throw_projectile) <= 0 then
 			ChatCommand.time2loopcheck = false
+		end
+	end
+	if ChatCommand.rtd_Hydra_bool then
+		if not ChatCommand.rtd_Hydra_listdone then
+			ChatCommand.rtd_Hydra_wait4do = {}
+			local _all_enemies = managers.enemy:all_enemies() or {}
+			local tt = 1
+			for _, data in pairs(_all_enemies) do
+				local enemyType = tostring(data.unit:base()._tweak_table)
+				if ( enemyType == "security" or enemyType == "gensec" or 
+					enemyType == "cop" or enemyType == "fbi" or 
+					enemyType == "swat" or enemyType == "heavy_swat" or 
+					enemyType == "fbi_swat" or enemyType == "fbi_heavy_swat" or 
+					enemyType == "city_swat" or enemyType == "sniper" or 
+					enemyType == "gangster" or enemyType == "taser" or 
+					enemyType == "tank" or enemyType == "spooc" or enemyType == "shield" or 
+					enemyType == "medic" ) then
+					ChatCommand.rtd_Hydra_wait4do[tt] = {follow_unit = data.unit, unit_name = data.unit:name(), pos = data.unit:position(), t = nowtime + (tt * 0.3)}
+					tt = tt + 1
+				end
+			end
+			ChatCommand.rtd_Hydra_listdone = true
+		else
+			local _Hydra_Run = false
+			for id, data in pairs(ChatCommand.rtd_Hydra_wait4do) do
+				if data and type(data.t) == "number" and data.t > 0 then
+					_Hydra_Run = true
+				end
+				if _Hydra_Run and data.t < nowtime then
+					data.t = 0
+					for i = 1 , ChatCommand.rtd_Hydra_Split do
+						local unit_done = ChatCommand:spawn_enemy(data.unit_name, data.pos + Vector3(math.random(-100, 100), math.random(-100, 100), 0), Rotation())
+					end
+					ChatCommand.rtd_Hydra_wait4do[id] = nil
+				end
+			end
+			if not _Hydra_Run then
+				ChatCommand.rtd_Hydra_bool = false
+				ChatCommand.rtd_Hydra_listdone = false
+				ChatCommand.rtd_Hydra_wait4do = {}
+			end
 		end
 	end
 end)

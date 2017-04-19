@@ -2,7 +2,7 @@
 	"name":"Chat Command",
 	"author":"Dr_Newbie",
 	"contact":"It will do something if you type special command in chat.",
-	"version":"2017.01.23",
+	"version":"2017.04.19",
 	"libraries" : [
 		{
 			"display_name":"Announcer",
