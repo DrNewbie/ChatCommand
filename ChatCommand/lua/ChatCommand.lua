@@ -3,7 +3,7 @@ if Network:is_client() then
 end
 
 _G.ChatCommand = _G.ChatCommand or {}
-ChatCommand.now_version = "[2017.04.19]"
+ChatCommand.now_version = "[2017.06.30]"
 ChatCommand.rtd_time = {0, 0, 0, 0}
 ChatCommand.rtd_delay = 60
 ChatCommand.VIP_LIST = ChatCommand.VIP_LIST or {}
@@ -115,8 +115,20 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 			if type1 == "!cloaker" or type1 == "!clo" or type1 == "/cloaker" or type1 == "/clo" then
 				unit_name = Idstring( "units/payday2/characters/ene_spook_1/ene_spook_1" )
 			end
-			if type3 and (type1 == "!dozer" or type1 == "/dozer") and tonumber(type3) <= 3 then
-				unit_name = Idstring( "units/payday2/characters/ene_bulldozer_" .. type3 .. "/ene_bulldozer_" .. type3 )
+			if type3 and (type1 == "!dozer" or type1 == "/dozer") then
+				local bulldozer_list = {
+					"units/payday2/characters/ene_bulldozer_1/ene_bulldozer_1",
+					"units/payday2/characters/ene_bulldozer_2/ene_bulldozer_2",
+					"units/payday2/characters/ene_bulldozer_3/ene_bulldozer_3",
+					"units/pd2_dlc_drm/characters/ene_bulldozer_medic/ene_bulldozer_medic",
+					"units/pd2_dlc_drm/characters/ene_bulldozer_minigun/ene_bulldozer_minigun"
+				}
+				if bulldozer_list[tonumber(type3)] then
+					unit_name = Idstring(bulldozer_list[tonumber(type3)])
+				else
+					cmm:say("Error: Wrong Type of Bulldozer")
+					return
+				end
 			end
 			if type1 == "!sniper" or type1 == "/sniper" then
 				if tonumber(type3) == 1 or tonumber(type3) == 2 then
