@@ -3,7 +3,7 @@ if Network:is_client() then
 end
 
 _G.ChatCommand = _G.ChatCommand or {}
-ChatCommand.now_version = "[2017.06.30]"
+ChatCommand.now_version = "[2017.07.01]"
 ChatCommand.rtd_time = {0, 0, 0, 0}
 ChatCommand.rtd_delay = 60
 ChatCommand.VIP_LIST = ChatCommand.VIP_LIST or {}
@@ -21,7 +21,7 @@ ChatCommand.rtd_roll_rate = {
 	10, --Cloaker
 	10, --Grenade Out
 	10, --Bomb this Area
-	10, --Smoke\Flash this Area
+	10, --Smoke\Flash\Tearing this Area
 	10, --Hydra
 	40 --NONE
 }
@@ -274,12 +274,17 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 						end
 					end
 				elseif _roll_ans == 8 then
-					local _flash_bool = false
-					if math.random() > 0.5 then
+					local _flash_bool = 0
+					local _r_type = math.random()
+					if 0 <= _r_type and _r_type <= 0.3 then
 						cmm:say("[".. pname .."] roll for Smoke this Area!!")
+						_flash_bool = 0
+					elseif 0.3 < _r_type and _r_type <= 0.6 then
+						cmm:say("[".. pname .."] roll for Tearing this Area!!")
+						_flash_bool = 1
 					else
-						_flash_bool = true
 						cmm:say("[".. pname .."] roll for Flash this Area!!")
+						_flash_bool = 2
 					end
 					local _start_pos = pos + Vector3(-2000, -2000, 0)
 					local _d = tweak_data.blackmarket.projectiles.frag.time_cheat or 0.05
@@ -503,8 +508,20 @@ Hooks:Add("GameSetupUpdate", "RTDGameSetupUpdate", function(t, dt)
 			for id, data in pairs(ChatCommand.throw_flash) do
 				if data.enable and type(data.time_do) == "number" and nowtime > data.time_do then
 					ChatCommand.throw_flash[id].enable = false
-					managers.network:session():send_to_peers_synched("sync_smoke_grenade", data.pos, data.pos, 6, data.is_smoke)
-					managers.groupai:state():sync_smoke_grenade(data.pos, data.pos, 6, data.is_smoke)
+					if data.is_smoke == 0 or data.is_smoke == 2 then
+						local _is_smoke = data.is_smoke == 0 and false or true
+						managers.network:session():send_to_peers_synched("sync_smoke_grenade", data.pos, data.pos, 6, data.is_smoke)
+						managers.groupai:state():sync_smoke_grenade(data.pos, data.pos, 6, data.is_smoke)
+					end
+					if data.is_smoke == 1 then
+						local grenade = World:spawn_unit(Idstring("units/pd2_dlc_drm/weapons/smoke_grenade_tear_gas/smoke_grenade_tear_gas"), data.pos, Rotation())
+						grenade:base():set_properties({
+							radius = 4 * 0.7 * 100,
+							damage = 30 * 0.3,
+							duration = 10
+						})
+						grenade:base():detonate()
+					end
 					ChatCommand.throw_flash[id] = {}
 				end
 			end
