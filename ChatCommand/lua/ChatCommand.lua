@@ -3,7 +3,7 @@ if Network:is_client() then
 end
 
 _G.ChatCommand = _G.ChatCommand or {}
-ChatCommand.now_version = "[2017.07.01]"
+ChatCommand.now_version = "[2017.07.04]"
 ChatCommand.rtd_time = {0, 0, 0, 0}
 ChatCommand.rtd_delay = 60
 ChatCommand.VIP_LIST = ChatCommand.VIP_LIST or {}
@@ -180,7 +180,7 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 	cmm:AddCommand({"version", "ver"}, false, false, function()
 		cmm:say("Current version is " .. ChatCommand.now_version)
 		cmm:say("More Info: http://t.im/chatcommand")
-		cmm:say("Donate Me: http://goo.gl/mlFXAD")
+		cmm:say("Donate Me: http://t.im/tf2baidonation")
 	end)	
 	cmm:AddCommand("end", true, false, function()
 		if game_state_machine:current_state_name() ~= "disconnected" then
@@ -349,6 +349,9 @@ Hooks:PostHook(ChatManager, "receive_message_by_peer", "ChatCommand_Active", fun
 			cmm:say("The command: " .. type1 .. " doesn't exist")
 		end
 	end
+	if not Utils:IsInHeist() then
+		cmm:say("Sorry, please wait until the game starts.")
+	end
 end)
 
 function ChatManager:AddCommand(cmd, ishost, isvip, func)
@@ -413,7 +416,6 @@ ChatCommand:Read_VIP_List()
 
 function ChatCommand:spawn_enemy(unit_name, pos, rot)
 	local unit_done = safe_spawn_unit(unit_name, pos, rot)
-
 	local team_id = tweak_data.levels:get_default_team_ID(unit_done:base():char_tweak().access == "gangster" and "gangster" or "combatant")
 	unit_done:movement():set_team(managers.groupai:state():team_data( team_id ))
 	managers.groupai:state():assign_enemy_to_group_ai(unit_done, team_id)

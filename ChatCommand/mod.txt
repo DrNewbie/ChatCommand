@@ -11,7 +11,7 @@
 			"identifier": "ANCR",
 			"optional": "false"
 		}
-	]
+	],
 	"hooks": [
 		{
 			"hook_id": "lib/managers/chatmanager",
