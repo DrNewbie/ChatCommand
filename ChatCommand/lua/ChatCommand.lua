@@ -3,7 +3,7 @@ if Network:is_client() then
 end
 
 _G.ChatCommand = _G.ChatCommand or {}
-ChatCommand.now_version = "[2017.07.04]"
+ChatCommand.now_version = "[2017.07.23]"
 ChatCommand.rtd_time = {0, 0, 0, 0}
 ChatCommand.rtd_delay = 60
 ChatCommand.VIP_LIST = ChatCommand.VIP_LIST or {}
@@ -12,7 +12,7 @@ ChatCommand.time2loopcheck = false
 ChatCommand.rtd_Hydra_bool = false
 ChatCommand.rtd_Hydra_wait4do = {}
 ChatCommand.rtd_Hydra_listdone = false
-ChatCommand.rtd_Hydra_Split = 2
+ChatCommand.rtd_Hydra_Split = 3
 ChatCommand.rtd_roll_rate = {
 	20, --Doctor Bag
 	20, --Ammo Bag
@@ -341,7 +341,11 @@ Hooks:PostHook(ChatManager, "receive_message_by_peer", "ChatCommand_Active", fun
 	if Utils:IsInHeist() and _is_rHost then
 		if type1 and (type1:sub(1,1) == "!" or type1:sub(1,1) == "/") and cmm._commands and cmm._commands[string.lower(type1)] then
 			if (cmm._commands[string.lower(type1)].ishost and _is_Host) or (cmm._commands[string.lower(type1)].isvip and _is_VIP) or (not cmm._commands[string.lower(type1)].ishost and not cmm._commands[string.lower(type1)].isvip) then
-				cmm._commands[string.lower(type1)].func(peer, type1, type2, type3)
+				if managers.trade and managers.trade.is_peer_in_custody and managers.trade:is_peer_in_custody(peer:id()) then
+					cmm:say("Sorry, [".. tostring(peer:name()) .."] you're in custody")
+				else
+					cmm._commands[string.lower(type1)].func(peer, type1, type2, type3)					
+				end
 			else 
 				cmm:say("You don't have premission to use this command")
 			end
