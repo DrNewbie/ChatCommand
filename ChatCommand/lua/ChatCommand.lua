@@ -12,7 +12,7 @@ ChatCommand.time2loopcheck = false
 ChatCommand.rtd_Hydra_bool = false
 ChatCommand.rtd_Hydra_wait4do = {}
 ChatCommand.rtd_Hydra_listdone = false
-ChatCommand.rtd_Hydra_Split = 3
+ChatCommand.rtd_Hydra_Split = 2
 ChatCommand.rtd_roll_rate = {
 	20, --Doctor Bag
 	20, --Ammo Bag
@@ -388,6 +388,9 @@ function ChatManager:AddCommand(cmd, ishost, isvip, func)
 end
 
 function ChatCommand:is_VIP(peer)
+	if not peer or not peer.user_id then
+		return false
+	end
 	local line = tostring(peer:user_id())
 	if self.VIP_LIST[line] then
 		return true
