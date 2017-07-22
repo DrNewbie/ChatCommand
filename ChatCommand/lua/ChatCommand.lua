@@ -23,6 +23,7 @@ ChatCommand.rtd_roll_rate = {
 	10, --Bomb this Area
 	10, --Smoke\Flash\Tearing this Area
 	10, --Hydra
+	5, --Release Teammate
 	40 --NONE
 }
 
@@ -301,6 +302,13 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 					ChatCommand.rtd_Hydra_bool = true
 					ChatCommand.rtd_Hydra_listdone = false
 					ChatCommand.rtd_Hydra_wait4do = {}
+				elseif _roll_ans == 10 then
+					cmm:say("[".. pname .."] roll for Release Teammate!!")
+					for _peer_id = 1, 4 do
+						if managers.trade and managers.trade.is_peer_in_custody and managers.trade:is_peer_in_custody(_peer_id) then
+							IngameWaitingForRespawnState.request_player_spawn(_peer_id)
+						end
+					end
 				else
 					cmm:say("[".. pname .."] roll for nothing!!")
 				end
