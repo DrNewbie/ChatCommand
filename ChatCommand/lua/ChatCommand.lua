@@ -361,9 +361,11 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 		ChatCommand.rtd_Hydra_CMD = {
 			Split = type2
 		}
+		cmm:say("[!! Hydra !!]")
 	end)
 	cmm:AddCommand("nuke", ChatCommand.CMD_ACCESS["nuke"][1], ChatCommand.CMD_ACCESS["nuke"][2], function()
 		ChatCommand.Nuke_CMD = true
+		cmm:say("[!! Kill all enemy !!]")
 	end)
 	cmm:AddCommand("free", ChatCommand.CMD_ACCESS["free"][1], ChatCommand.CMD_ACCESS["free"][2], function()
 		for k, v in pairs( managers.network:session():peers() ) do
@@ -371,11 +373,13 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 				IngameWaitingForRespawnState.request_player_spawn(v:id())
 			end
 		end
+		cmm:say("[!! Free my teammate !!]")
 	end)
 	cmm:AddCommand("bomb", ChatCommand.CMD_ACCESS["bomb"][1], ChatCommand.CMD_ACCESS["bomb"][2], function(peer)
 		if peer and peer.unit and peer:unit().position then
 			local pos = peer:unit():position()
 			BombthisArea(pos)
+			cmm:say("[!! Bomb this area !!]")
 		end
 	end)
 end)
