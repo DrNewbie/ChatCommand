@@ -10,9 +10,9 @@ ChatCommand.CMD_ACCESS = {
 	add = {true, false},
 	nuke = {true, false},
 	free = {true, false},
-	--
 	vipmenu = {true, false},
 	loud = {true, false},
+	--
 	spawn = {true, true},
 	hydra = {true, true},
 	bomb = {true, true},
