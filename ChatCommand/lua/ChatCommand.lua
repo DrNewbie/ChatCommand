@@ -4,6 +4,26 @@ end
 
 _G.ChatCommand = _G.ChatCommand or {}
 ChatCommand.now_version = "[2017.07.23]"
+ChatCommand.CMD_ACCESS = {
+	restart = {true, false},
+	ends = {true, false},
+	add = {true, false},
+	nuke = {true, false},
+	free = {true, false},
+	--
+	vipmenu = {true, false},
+	loud = {true, false},
+	spawn = {true, true},
+	hydra = {true, true},
+	bomb = {true, true},
+	--
+	donate = {false, false},
+	jail = {false, false},
+	version = {false, false},
+	rtd = {false, false},
+	vip = {false, false},
+	help = {false, false}
+}
 ChatCommand.rtd_time = {0, 0, 0, 0}
 ChatCommand.rtd_delay = 60
 ChatCommand.VIP_LIST = ChatCommand.VIP_LIST or {}
@@ -13,6 +33,7 @@ ChatCommand.rtd_Hydra_bool = false
 ChatCommand.rtd_Hydra_wait4do = {}
 ChatCommand.rtd_Hydra_listdone = false
 ChatCommand.rtd_Hydra_Split = 2
+ChatCommand.rtd_Hydra_CMD = {}
 ChatCommand.rtd_roll_rate = {
 	20, --Doctor Bag
 	20, --Ammo Bag
@@ -26,9 +47,24 @@ ChatCommand.rtd_roll_rate = {
 	5, --Release Teammate
 	40 --NONE
 }
+ChatCommand.Nuke_CMD = false
 
 Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
-	cmm:AddCommand({"jail", "kill"}, false, false, function(peer)
+	local function BombthisArea (pos)
+		local nowtime = math.floor(TimerManager:game():time())
+		local projectile_index = tweak_data.blackmarket:get_index_from_projectile_id("frag")
+		local _start_pos = pos + Vector3(-2000, -2000, 0)
+		local _d = tweak_data.blackmarket.projectiles.frag.time_cheat or 0.05
+		ChatCommand.time2loopcheck = true
+		ChatCommand.throw_projectile = {}
+		for i = 1, 10 do
+			for j = 1, 10 do
+				local _table_size = table.size(ChatCommand.throw_projectile) + 1
+				table.insert(ChatCommand.throw_projectile, {enable = true, projectile_index = projectile_index, pos = _start_pos + Vector3(i*400, j*400, 50), time_do = nowtime + 3 + _d*_table_size})
+			end
+		end
+	end
+	cmm:AddCommand({"jail", "kill"}, ChatCommand.CMD_ACCESS["jail"][1], ChatCommand.CMD_ACCESS["jail"][2], function(peer)
 		if not managers.trade:is_peer_in_custody(peer:id()) then
 			if peer:id() == 1 then
 				--Copy from Cheat
@@ -50,7 +86,7 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 			end
 		end
 	end)
-	cmm:AddCommand("add", true, false, function(peer, type1, type2, type3)
+	cmm:AddCommand("add", ChatCommand.CMD_ACCESS["add"][1], ChatCommand.CMD_ACCESS["add"][2], function(peer, type1, type2, type3)
 		if not managers.network then
 			_send_msg("Error: !add")
 		else
@@ -81,14 +117,14 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 						cmm:say("Host change [" .. now_peer[idx]:name() .."] to VIP")
 					end
 					file:close()
-					Read_VIP_List()
+					ChatCommand:Read_VIP_List()
 				else
 					cmm:say("Try again")
 				end
 			end
 		end
 	end)
-	cmm:AddCommand({"donate", "d"}, false, false, function()
+	cmm:AddCommand({"donate", "d"}, ChatCommand.CMD_ACCESS["donate"][1], ChatCommand.CMD_ACCESS["donate"][2], function()
 		local file, err = io.open("mods/ChatCommand/donate_msg.txt", "r")
 		if file then
 			local line = file:read()
@@ -99,13 +135,13 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 		end
 		file:close()
 	end)
-	cmm:AddCommand("loud", true, false, function()
+	cmm:AddCommand("loud", ChatCommand.CMD_ACCESS["loud"][1], ChatCommand.CMD_ACCESS["loud"][2], function()
 		if managers.groupai and managers.groupai:state() and managers.groupai:state():whisper_mode() then
 			managers.groupai:state():on_police_called("alarm_pager_hang_up")
 			managers.hud:show_hint( { text = "LOUD!" } )
 		end	
 	end)
-	cmm:AddCommand({"dozer", "taser", "tas" ,"cloaker", "clo", "sniper", "shield", "medic"}, true, true, function(peer, type1, type2, type3)
+	cmm:AddCommand({"dozer", "taser", "tas" ,"cloaker", "clo", "sniper", "shield", "medic"}, ChatCommand.CMD_ACCESS["spawn"][1], ChatCommand.CMD_ACCESS["spawn"][2], function(peer, type1, type2, type3)
 		if peer and peer:unit() then
 			local unit = peer:unit()
 			local unit_name = Idstring( "units/payday2/characters/ene_bulldozer_1/ene_bulldozer_1" )
@@ -160,7 +196,7 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 			end
 		end
 	end)
-	cmm:AddCommand({"restart", "res"}, true, false, function()
+	cmm:AddCommand({"restart", "res"}, ChatCommand.CMD_ACCESS["restart"][1], ChatCommand.CMD_ACCESS["restart"][2], function()
 		if managers.crime_spree:_is_active() then
 			return
 		end
@@ -175,20 +211,20 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 			managers.game_play_central:restart_the_game()
 		end
 	end)
-	cmm:AddCommand({"vipmenu"}, true, false, function()
+	cmm:AddCommand({"vipmenu"}, ChatCommand.CMD_ACCESS["vipmenu"][1], ChatCommand.CMD_ACCESS["vipmenu"][2], function()
 		ChatCommand:Menu_VIPMENU()
 	end)
-	cmm:AddCommand({"version", "ver"}, false, false, function()
+	cmm:AddCommand({"version", "ver"}, ChatCommand.CMD_ACCESS["version"][1], ChatCommand.CMD_ACCESS["version"][2], function()
 		cmm:say("Current version is " .. ChatCommand.now_version)
 		cmm:say("More Info: http://t.im/chatcommand")
 		cmm:say("Donate Me: http://t.im/tf2baidonation")
 	end)	
-	cmm:AddCommand("end", true, false, function()
+	cmm:AddCommand("end", ChatCommand.CMD_ACCESS["ends"][1], ChatCommand.CMD_ACCESS["ends"][2], function()
 		if game_state_machine:current_state_name() ~= "disconnected" then
 			MenuCallbackHandler:load_start_menu_lobby()
 		end	
 	end)
-	cmm:AddCommand("vip", false, false, function(peer)
+	cmm:AddCommand("vip", ChatCommand.CMD_ACCESS["vip"][1], ChatCommand.CMD_ACCESS["vip"][2], function(peer)
 		if ChatCommand:is_VIP(peer) then
 			cmm:say("[".. peer:name() .."] is VIP")
 		elseif peer:id() == 1 then
@@ -197,7 +233,7 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 			cmm:say("[".. peer:name() .."] is Normal player")
 		end
 	end)
-	cmm:AddCommand("rtd", false, false, function(peer)
+	cmm:AddCommand("rtd", ChatCommand.CMD_ACCESS["rtd"][1], ChatCommand.CMD_ACCESS["rtd"][2], function(peer)
 		if not peer or not peer:unit() then
 			peer = managers.network:session():local_peer()
 		end
@@ -263,17 +299,7 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 					end
 				elseif _roll_ans == 7 then
 					cmm:say("[".. pname .."] roll for Bomb this Area!!")
-					local projectile_index = tweak_data.blackmarket:get_index_from_projectile_id("frag")
-					local _start_pos = pos + Vector3(-2000, -2000, 0)
-					local _d = tweak_data.blackmarket.projectiles.frag.time_cheat or 0.05
-					ChatCommand.time2loopcheck = true
-					ChatCommand.throw_projectile = {}
-					for i = 1, 10 do
-						for j = 1, 10 do
-							local _table_size = table.size(ChatCommand.throw_projectile) + 1
-							table.insert(ChatCommand.throw_projectile, {enable = true, projectile_index = projectile_index, pos = _start_pos + Vector3(i*400, j*400, 50), time_do = nowtime + 3 + _d*_table_size})
-						end
-					end
+					BombthisArea(pos)
 				elseif _roll_ans == 8 then
 					local _flash_bool = 0
 					local _r_type = math.random()
@@ -304,9 +330,9 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 					ChatCommand.rtd_Hydra_wait4do = {}
 				elseif _roll_ans == 10 then
 					cmm:say("[".. pname .."] roll for Release Teammate!!")
-					for _peer_id = 1, 4 do
-						if managers.trade and managers.trade.is_peer_in_custody and managers.trade:is_peer_in_custody(_peer_id) then
-							IngameWaitingForRespawnState.request_player_spawn(_peer_id)
+					for k, v in pairs( managers.network:session():peers() ) do
+						if managers.trade and managers.trade.is_peer_in_custody and managers.trade:is_peer_in_custody(v:id()) then
+							IngameWaitingForRespawnState.request_player_spawn(v:id())
 						end
 					end
 				else
@@ -317,12 +343,40 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 			end
 			math.randomseed(tostring(os.time()):reverse():sub(1, 6))
 		end
-	end)	
-	cmm:AddCommand("help", false, false, function()
+	end)
+	cmm:AddCommand("help", ChatCommand.CMD_ACCESS["help"][1], ChatCommand.CMD_ACCESS["help"][2], function()
 		cmm:say("[!rtd: Roll something special]")
 		cmm:say("[!jail: Send yourself to jail]")
 		cmm:say("[!vip: Let you know your level]")
 		cmm:say("[!version: Tell something about this MOD]")
+	end)
+	cmm:AddCommand("hydra", ChatCommand.CMD_ACCESS["hydra"][1], ChatCommand.CMD_ACCESS["hydra"][2], function(_, _, type2, _)
+		ChatCommand.rtd_Hydra_bool = true
+		ChatCommand.rtd_Hydra_listdone = false
+		ChatCommand.rtd_Hydra_wait4do = {}
+		type2 = tonumber(tostring(type2)) or 0
+		if type2 <= 0 then
+			type2 = 1
+		end
+		ChatCommand.rtd_Hydra_CMD = {
+			Split = type2
+		}
+	end)
+	cmm:AddCommand("nuke", ChatCommand.CMD_ACCESS["nuke"][1], ChatCommand.CMD_ACCESS["nuke"][2], function()
+		ChatCommand.Nuke_CMD = true
+	end)
+	cmm:AddCommand("free", ChatCommand.CMD_ACCESS["free"][1], ChatCommand.CMD_ACCESS["free"][2], function()
+		for k, v in pairs( managers.network:session():peers() ) do
+			if managers.trade and managers.trade.is_peer_in_custody and managers.trade:is_peer_in_custody(v:id()) then
+				IngameWaitingForRespawnState.request_player_spawn(v:id())
+			end
+		end
+	end)
+	cmm:AddCommand("bomb", ChatCommand.CMD_ACCESS["bomb"][1], ChatCommand.CMD_ACCESS["bomb"][2], function(peer)
+		if peer and peer.unit and peer:unit().position then
+			local pos = peer:unit():position()
+			BombthisArea(pos)
+		end
 	end)
 end)
 function ChatManager:say(_msg, _msg2)
@@ -495,7 +549,7 @@ function ChatCommand:Menu_VIPMENU_Selected_Remove(params)
 		end
 		file:close()
 	end
-	Read_VIP_List()
+	ChatCommand:Read_VIP_List()
 	local _dialog_data = {
 		title = "" .. params.id,
 		text = "He is removed from VIP list.",
@@ -510,6 +564,17 @@ end
 Hooks:Add("GameSetupUpdate", "RTDGameSetupUpdate", function(t, dt)
 	if not Utils:IsInHeist() then
 		return
+	end
+	local function nukeunit(pawn)
+		local col_ray = { }
+		col_ray.ray = Vector3(1, 0, 0)
+		col_ray.position = pawn:position()
+		local action_data = {}
+		action_data.variant = "explosion"
+		action_data.damage = 9999999
+		action_data.attacker_unit = nil
+		action_data.col_ray = col_ray
+		pawn:character_damage():damage_explosion(action_data)
 	end
 	local nowtime = TimerManager:game():time()
 	if ChatCommand.time2loopcheck then
@@ -574,8 +639,14 @@ Hooks:Add("GameSetupUpdate", "RTDGameSetupUpdate", function(t, dt)
 				end
 				if _Hydra_Run and data.t < nowtime then
 					data.t = 0
-					for i = 1 , ChatCommand.rtd_Hydra_Split do
-						local unit_done = ChatCommand:spawn_enemy(data.unit_name, data.pos + Vector3(math.random(-100, 100), math.random(-100, 100), 0), Rotation())
+					local _Split = 0
+					if ChatCommand.rtd_Hydra_CMD and ChatCommand.rtd_Hydra_CMD.Split then
+						_Split = ChatCommand.rtd_Hydra_CMD.Split
+					else
+						_Split = ChatCommand.rtd_Hydra_Split
+					end
+					for i = 1 , _Split do
+						local unit_done = ChatCommand:spawn_enemy(data.unit_name, data.pos + Vector3(math.random(-200, 200), math.random(-200, 200), 0), Rotation())
 					end
 					ChatCommand.rtd_Hydra_wait4do[id] = nil
 				end
@@ -584,6 +655,24 @@ Hooks:Add("GameSetupUpdate", "RTDGameSetupUpdate", function(t, dt)
 				ChatCommand.rtd_Hydra_bool = false
 				ChatCommand.rtd_Hydra_listdone = false
 				ChatCommand.rtd_Hydra_wait4do = {}
+				ChatCommand.rtd_Hydra_CMD = {}
+			end
+		end
+	end
+	if ChatCommand.Nuke_CMD then
+		ChatCommand.Nuke_CMD = false
+		local _all_enemies = managers.enemy:all_enemies() or {}
+		for _, data in pairs(_all_enemies) do
+			local enemyType = tostring(data.unit:base()._tweak_table)
+			if ( enemyType == "security" or enemyType == "gensec" or 
+				enemyType == "cop" or enemyType == "fbi" or 
+				enemyType == "swat" or enemyType == "heavy_swat" or 
+				enemyType == "fbi_swat" or enemyType == "fbi_heavy_swat" or 
+				enemyType == "city_swat" or enemyType == "sniper" or 
+				enemyType == "gangster" or enemyType == "taser" or 
+				enemyType == "tank" or enemyType == "spooc" or enemyType == "shield" or 
+				enemyType == "medic" ) then
+				nukeunit(data.unit)
 			end
 		end
 	end
