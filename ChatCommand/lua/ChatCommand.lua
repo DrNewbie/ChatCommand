@@ -3,16 +3,16 @@ if Network:is_client() then
 end
 
 _G.ChatCommand = _G.ChatCommand or {}
-ChatCommand.now_version = "[2017.07.23]"
+ChatCommand.now_version = "[2017.08.06]"
 ChatCommand.CMD_ACCESS = {
 	restart = {true, false},
 	ends = {true, false},
 	add = {true, false},
 	nuke = {true, false},
 	free = {true, false},
+	--
 	vipmenu = {true, false},
 	loud = {true, false},
-	--
 	spawn = {true, true},
 	hydra = {true, true},
 	bomb = {true, true},
@@ -344,12 +344,6 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 			math.randomseed(tostring(os.time()):reverse():sub(1, 6))
 		end
 	end)
-	cmm:AddCommand("help", ChatCommand.CMD_ACCESS["help"][1], ChatCommand.CMD_ACCESS["help"][2], function()
-		cmm:say("[!rtd: Roll something special]")
-		cmm:say("[!jail: Send yourself to jail]")
-		cmm:say("[!vip: Let you know your level]")
-		cmm:say("[!version: Tell something about this MOD]")
-	end)
 	cmm:AddCommand("hydra", ChatCommand.CMD_ACCESS["hydra"][1], ChatCommand.CMD_ACCESS["hydra"][2], function(_, _, type2, _)
 		ChatCommand.rtd_Hydra_bool = true
 		ChatCommand.rtd_Hydra_listdone = false
@@ -382,12 +376,24 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 			cmm:say("[!! Bomb this area !!]")
 		end
 	end)
+	cmm:AddCommand("help", ChatCommand.CMD_ACCESS["help"][1], ChatCommand.CMD_ACCESS["help"][2], function(peer)
+		cmm:say("[!rtd: Roll something special]")
+		cmm:say("[!jail: Send yourself to jail]")
+		cmm:say("[!vip: Let you know your level]")
+		cmm:say("[!version: Tell something about this MOD]")
+		cmm:say("[!d: >;) ]")
+		if peer and peer.id and peer:id() > 0 then
+			if ChatCommand:is_VIP(peer) and not peer:id() == 1 then
+				cmm:say("VIP: [hydra, bomb, dozer, clo, tas, sniper, shield, medic]")
+			end
+			if peer:id() == 1 then
+				cmm:say("HOST: [free, nuke, loud, res, end, add, vipmenu, hydra, bomb, dozer, clo, tas, sniper, shield, medic]")
+			end
+		end
+	end)
 end)
-function ChatManager:say(_msg, _msg2)
+function ChatManager:say(_msg)
 	if _msg then
-		managers.chat:send_message(ChatManager.GAME, "", tostring(_msg))
-	end
-	if _msg2 then
 		managers.chat:send_message(ChatManager.GAME, "", tostring(_msg))
 	end
 end
@@ -418,9 +424,6 @@ Hooks:PostHook(ChatManager, "receive_message_by_peer", "ChatCommand_Active", fun
 		elseif type1 and (type1:sub(1,1) == "!" or type1:sub(1,1) == "/") then
 			cmm:say("The command: " .. type1 .. " doesn't exist")
 		end
-	end
-	if not Utils:IsInHeist() then
-		cmm:say("Sorry, please wait until the game starts.")
 	end
 end)
 
