@@ -573,15 +573,7 @@ Hooks:Add("GameSetupUpdate", "RTDGameSetupUpdate", function(t, dt)
 		return
 	end
 	local function nukeunit(pawn)
-		local col_ray = { }
-		col_ray.ray = Vector3(1, 0, 0)
-		col_ray.position = pawn:position()
-		local action_data = {}
-		action_data.variant = "explosion"
-		action_data.damage = 9999999
-		action_data.attacker_unit = nil
-		action_data.col_ray = col_ray
-		pawn:character_damage():damage_explosion(action_data)
+		pawn:character_damage():damage_mission({damage = 9999999, forced = true})
 	end
 	local nowtime = TimerManager:game():time()
 	if ChatCommand.time2loopcheck then

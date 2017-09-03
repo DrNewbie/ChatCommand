@@ -3,8 +3,11 @@
 	"description": " It will do something if you type special command in chat.",
 	"author": "Dr_Newbie",
 	"contact": " ",
-	"version": "333",
-	"priority": 333,
+	"version": "2",
+	"priority": 1,
+	"image": "logo.png",
+	"color": "0 0 0",
+	"blt_version": 2,
 	"libraries": [
 		{
 			"display_name": "Announcer",
