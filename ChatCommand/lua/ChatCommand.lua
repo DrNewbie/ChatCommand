@@ -3,7 +3,7 @@ if Network:is_client() then
 end
 
 _G.ChatCommand = _G.ChatCommand or {}
-ChatCommand.now_version = "[2017.08.06]"
+ChatCommand.now_version = "[2017.09.18]"
 ChatCommand.CMD_ACCESS = {
 	restart = {true, false},
 	ends = {true, false},
@@ -197,7 +197,7 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 		end
 	end)
 	cmm:AddCommand({"restart", "res"}, ChatCommand.CMD_ACCESS["restart"][1], ChatCommand.CMD_ACCESS["restart"][2], function()
-		if managers.crime_spree:_is_active() then
+		if managers.crime_spree:is_active() then
 			return
 		end
 		--Copy from Quick/Instant restart 1.0 by: FishTaco
