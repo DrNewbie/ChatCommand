@@ -54,7 +54,7 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 		local nowtime = math.floor(TimerManager:game():time())
 		local projectile_index = "frag"
 		local _start_pos = pos + Vector3(-2000, -2000, 0)
-		local _d = tweak_data.blackmarket.projectiles.frag.time_cheat or 0.1
+		local _d = tweak_data.blackmarket.projectiles.frag.time_cheat or 0.15
 		ChatCommand.time2loopcheck = true
 		ChatCommand.throw_projectile = {}
 		for i = 1, 10 do
@@ -314,7 +314,7 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 						_flash_bool = 2
 					end
 					local _start_pos = pos + Vector3(-2000, -2000, 0)
-					local _d = tweak_data.blackmarket.projectiles.frag.time_cheat or 0.05
+					local _d = tweak_data.blackmarket.projectiles.frag.time_cheat or 0.15
 					ChatCommand.time2loopcheck = true
 					ChatCommand.throw_flash = {}
 					for i = 1, 10 do
