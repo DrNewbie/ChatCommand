@@ -3,7 +3,7 @@ if Network:is_client() then
 end
 
 _G.ChatCommand = _G.ChatCommand or {}
-ChatCommand.now_version = "[2017.09.18]"
+ChatCommand.now_version = "[2017.11.30]"
 ChatCommand.CMD_ACCESS = {
 	restart = {true, false},
 	ends = {true, false},
@@ -52,9 +52,9 @@ ChatCommand.Nuke_CMD = false
 Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 	local function BombthisArea (pos)
 		local nowtime = math.floor(TimerManager:game():time())
-		local projectile_index = tweak_data.blackmarket:get_index_from_projectile_id("frag")
+		local projectile_index = "frag"
 		local _start_pos = pos + Vector3(-2000, -2000, 0)
-		local _d = tweak_data.blackmarket.projectiles.frag.time_cheat or 0.05
+		local _d = tweak_data.blackmarket.projectiles.frag.time_cheat or 0.1
 		ChatCommand.time2loopcheck = true
 		ChatCommand.throw_projectile = {}
 		for i = 1, 10 do
@@ -292,7 +292,7 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 					end
 				elseif _roll_ans == 6 then
 					cmm:say("[".. pname .."] roll for Grenade Out!!")
-					local projectile_index = tweak_data.blackmarket:get_index_from_projectile_id("frag")
+					local projectile_index = "frag"
 					local _xy_fixed = {-10, 10, -100, 100, -200, 200, -500, 500}
 					for i = 1, 10 do
 						ProjectileBase.throw_projectile(projectile_index, pos + Vector3(_xy_fixed[math.random(8)], _xy_fixed[math.random(8)], 50), Vector3(0, 0, -1), 1)
@@ -574,6 +574,7 @@ Hooks:Add("GameSetupUpdate", "RTDGameSetupUpdate", function(t, dt)
 	end
 	local function nukeunit(pawn)
 		pawn:character_damage():damage_mission({damage = 9999999, forced = true})
+		pawn:set_slot(0)
 	end
 	local nowtime = TimerManager:game():time()
 	if ChatCommand.time2loopcheck then
