@@ -3,7 +3,7 @@ if Network:is_client() then
 end
 
 _G.ChatCommand = _G.ChatCommand or {}
-ChatCommand.now_version = "[2017.11.30]"
+ChatCommand.now_version = "[2018.12.28]"
 ChatCommand.CMD_ACCESS = {
 	restart = {true, false},
 	ends = {true, false},
@@ -24,16 +24,18 @@ ChatCommand.CMD_ACCESS = {
 	vip = {false, false},
 	help = {false, false}
 }
-ChatCommand.rtd_time = {0, 0, 0, 0}
-ChatCommand.rtd_delay = 60
 ChatCommand.VIP_LIST = ChatCommand.VIP_LIST or {}
 ChatCommand.VIP_LIST_IDX = ChatCommand.VIP_LIST_IDX or {}
 ChatCommand.time2loopcheck = false
+ChatCommand.rtd_time = {0, 0, 0, 0}
+ChatCommand.rtd_delay = 1
 ChatCommand.rtd_Hydra_bool = false
 ChatCommand.rtd_Hydra_wait4do = {}
 ChatCommand.rtd_Hydra_listdone = false
 ChatCommand.rtd_Hydra_Split = 2
 ChatCommand.rtd_Hydra_CMD = {}
+ChatCommand.Nuke_CMD = false
+ChatCommand.rtd_SSSFeignDeath_bool = nil
 ChatCommand.rtd_roll_rate = {
 	20, --Doctor Bag
 	20, --Ammo Bag
@@ -45,11 +47,11 @@ ChatCommand.rtd_roll_rate = {
 	10, --Smoke\Flash\Tearing this Area
 	10, --Hydra
 	5, --Release Teammate
+	999, --Super Ace Feign Death
 	40 --NONE
 }
-ChatCommand.Nuke_CMD = false
 
-Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
+Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm)
 	local function BombthisArea (pos)
 		local nowtime = math.floor(TimerManager:game():time())
 		local projectile_index = "frag"
@@ -72,7 +74,7 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 				managers.player:force_drop_carry()
 				managers.statistics:downed( { death = true } )
 				IngameFatalState.on_local_player_dead()
-				game_state_machine:change_state_by_name( "ingame_waiting_for_respawn" )
+				game_state_machine:change_state_by_name("ingame_waiting_for_respawn")
 				player:character_damage():set_invulnerable( true )
 				player:character_damage():set_health( 0 )
 				player:base():_unregister()
@@ -275,7 +277,7 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 					FirstAidKitBase.spawn( pos, rot, 0 , 0 )
 				elseif _roll_ans == 5 then
 					cmm:say("[".. pname .."] roll for Cloaker!!")
-					local unit_name = Idstring( "units/payday2/characters/ene_spook_1/ene_spook_1" )
+					local unit_name = Idstring("units/payday2/characters/ene_spook_1/ene_spook_1")
 					local _xy_fixed = {
 						Vector3(100, 100, 0),
 						Vector3(-100, -100, 0),
@@ -335,6 +337,9 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm, ...)
 							IngameWaitingForRespawnState.request_player_spawn(v:id())
 						end
 					end
+				elseif _roll_ans == 11 then
+					cmm:say("[".. pname .."] roll for Super Ace Feign Death!!")
+					ChatCommand.rtd_SSSFeignDeath_bool = 30
 				else
 					cmm:say("[".. pname .."] roll for nothing!!")
 				end
@@ -673,6 +678,31 @@ Hooks:Add("GameSetupUpdate", "RTDGameSetupUpdate", function(t, dt)
 				enemyType == "tank" or enemyType == "spooc" or enemyType == "shield" or 
 				enemyType == "medic" ) then
 				nukeunit(data.unit)
+			end
+		end
+	end
+	if ChatCommand.rtd_SSSFeignDeath_bool then
+		ChatCommand.rtd_SSSFeignDeath_bool = ChatCommand.rtd_SSSFeignDeath_bool - dt
+		if ChatCommand.rtd_SSSFeignDeath_bool <= 0 then
+			ChatCommand.rtd_SSSFeignDeath_bool = nil
+		else
+			local revive_units = {}
+			for c_key, c_data in pairs(managers.groupai:state():all_player_criminals()) do
+				revive_units[c_data.unit:key()] = c_data.unit
+			end
+			for c_key, c_data in pairs(managers.groupai:state():all_AI_criminals()) do
+				revive_units[c_data.unit:key()] = c_data.unit
+			end
+			for _, r_unit in pairs(revive_units) do
+				if r_unit:interaction() then
+					if r_unit:interaction():active() then
+						r_unit:interaction():interact(r_unit)
+						managers.chat:say("'Super Ace Feign Death' help ["..r_unit:base():nick_name().."] to get up!!")
+					end
+				elseif r_unit:character_damage() and (r_unit:character_damage():need_revive() or r_unit:character_damage():arrested()) then
+					r_unit:character_damage():revive(r_unit)
+					managers.chat:say("'Super Ace Feign Death' help ["..r_unit:base():nick_name().."] to get up!!")
+				end
 			end
 		end
 	end

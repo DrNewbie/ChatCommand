@@ -1,28 +1,37 @@
 {
-	"name": "Chat Command",
-	"description": " It will do something if you type special command in chat.",
-	"author": "Dr_Newbie",
-	"contact": " ",
-	"version": "5",
-	"priority": 1,
-	"image": "logo.png",
-	"color": "0 0 0",
-	"blt_version": 2,
-	"libraries": [
-		{
-			"display_name": "Announcer",
-			"identifier": "ANCR",
-			"optional": "false"
-		}
-	],
-	"hooks": [
-		{
-			"hook_id": "lib/managers/chatmanager",
-			"script_path": "lua/ChatCommand.lua"
-		},
-		{
-			"hook_id": "lib/managers/menumanager",
-			"script_path": "lua/menumanager.lua"
-		}
-	]
+  "name": "Chat Command",
+  "description": " It will do something if you type special command in chat.",
+  "author": "Dr_Newbie",
+  "contact": " ",
+  "version": "5",
+  "priority": 100,
+  "color": "0 0 0",
+  "blt_version": 2,
+  "libraries": [
+    {
+      "display_name": "Announcer",
+      "identifier": "ANCR",
+      "optional": "false"
+    }
+  ],
+  "hooks": [
+    {
+      "hook_id": "lib/managers/chatmanager",
+      "script_path": "lua/ChatCommand.lua"
+    },
+    {
+      "hook_id": "lib/managers/menumanager",
+      "script_path": "lua/menumanager.lua"
+    }
+  ],
+  "updates": [
+    {
+      "identifier": "ChatCommandRTDGitHubUpdate",
+      "host": {
+        "meta": "https://drnewbie.github.io/ChatCommand/ChatCommandRTD.meta.json",
+        "patchnotes": "https://github.com/DrNewbie/ChatCommand/commits/master",
+        "download": "https://drnewbie.github.io/ChatCommand/ChatCommandRTD.zip"
+      }
+    }
+  ]
 }
