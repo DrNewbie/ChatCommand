@@ -46,8 +46,8 @@ ChatCommand.rtd_roll_rate = {
 	10, --Bomb this Area
 	10, --Smoke\Flash\Tearing this Area
 	10, --Hydra
-	5, --Release Teammate
-	999, --Super Ace Feign Death
+	10, --Release Teammate
+	10, --Super Ace Feign Death
 	40 --NONE
 }
 
