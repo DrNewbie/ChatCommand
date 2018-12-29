@@ -27,34 +27,37 @@ ChatCommand.CMD_ACCESS = {
 ChatCommand.VIP_LIST = ChatCommand.VIP_LIST or {}
 ChatCommand.VIP_LIST_IDX = ChatCommand.VIP_LIST_IDX or {}
 ChatCommand.time2loopcheck = false
+ChatCommand.Nuke_CMD = false
 ChatCommand.rtd_time = {0, 0, 0, 0}
-ChatCommand.rtd_delay = 1
+ChatCommand.rtd_delay = 60
 ChatCommand.rtd_Hydra_bool = false
 ChatCommand.rtd_Hydra_wait4do = {}
 ChatCommand.rtd_Hydra_listdone = false
 ChatCommand.rtd_Hydra_Split = 2
 ChatCommand.rtd_Hydra_CMD = {}
-ChatCommand.Nuke_CMD = false
 ChatCommand.rtd_SSSFeignDeath_bool = nil
 ChatCommand.rtd_roll_rate = {
-	20, --Doctor Bag
-	20, --Ammo Bag
-	35, --Grenade Crate
-	35, --First Aid Kit
-	10, --Cloaker
-	10, --Grenade Out
-	10, --Bomb this Area
-	10, --Smoke\Flash\Tearing this Area
-	10, --Hydra
-	10, --Release Teammate
-	10, --Super Ace Feign Death
-	40 --NONE
+	20,		--01	Doctor Bag
+	20,		--02	Ammo Bag
+	35,		--03	Grenade Crate
+	35,		--04	First Aid Kit
+	10,		--05	Cloaker
+	10,		--06	Grenade Out
+	10,		--07	Bomb this Area
+	10,		--08	Smoke\Flash\Tearing this Area
+	10,		--09	Hydra
+	10,		--10	Release Teammate
+	10,		--11	Super Ace Feign Death
+	10,		--12	Dozer
+	10,		--13	Flame Out
+	10,		--14	Flame Everyone
+	40		--NONE
 }
 
 Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm)
-	local function BombthisArea (pos)
+	local function BombthisArea (pos, frag)
 		local nowtime = math.floor(TimerManager:game():time())
-		local projectile_index = "frag"
+		local projectile_index = frag or "frag"
 		local _start_pos = pos + Vector3(-2000, -2000, 0)
 		local _d = tweak_data.blackmarket.projectiles.frag.time_cheat or 0.15
 		ChatCommand.time2loopcheck = true
@@ -240,12 +243,15 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm)
 			peer = managers.network:session():local_peer()
 		end
 		if peer and peer:unit() then
+			math.randomseed(tostring(os.time()):reverse():sub(1, 6))
+			
 			local unit = peer:unit()
 			local nowtime = math.floor(TimerManager:game():time())
 			local pid = peer:id()
 			local pname = peer:name()
 			local pos = unit:position()
 			local rot = unit:rotation()
+			
 			if ChatCommand.rtd_time[pid] < nowtime then
 				ChatCommand.rtd_time[pid] = nowtime + ChatCommand.rtd_delay
 				local _roll_rate = ChatCommand.rtd_roll_rate
@@ -286,10 +292,9 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm)
 						Vector3(0, 100, 0),
 						Vector3(0, -100, 0),
 						Vector3(100, 0, 0),
-						Vector3(-100, 0, 0),
-						Vector3(0, 0, 100),
+						Vector3(-100, 0, 0)
 					}
-					for i = 1, 9 do
+					for i = 1, 8 do
 						ChatCommand:spawn_enemy(unit_name, pos + _xy_fixed[i], rot)
 					end
 				elseif _roll_ans == 6 then
@@ -297,7 +302,7 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm)
 					local projectile_index = "frag"
 					local _xy_fixed = {-10, 10, -100, 100, -200, 200, -500, 500}
 					for i = 1, 10 do
-						ProjectileBase.throw_projectile(projectile_index, pos + Vector3(_xy_fixed[math.random(8)], _xy_fixed[math.random(8)], 50), Vector3(0, 0, -1), 1)
+						ProjectileBase.throw_projectile(projectile_index, pos + Vector3(_xy_fixed[math.random(8)], _xy_fixed[math.random(8)], 50), Vector3(0, 0, -1), 0)
 					end
 				elseif _roll_ans == 7 then
 					cmm:say("[".. pname .."] roll for Bomb this Area!!")
@@ -340,13 +345,63 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm)
 				elseif _roll_ans == 11 then
 					cmm:say("[".. pname .."] roll for Super Ace Feign Death!!")
 					ChatCommand.rtd_SSSFeignDeath_bool = 30
+				elseif _roll_ans == 12 then
+					cmm:say("[".. pname .."] roll for Dozer!!")
+					local unit_names = {
+						Idstring("units/pd2_dlc_gitgud/characters/ene_zeal_bulldozer/ene_zeal_bulldozer"),
+						Idstring("units/pd2_dlc_gitgud/characters/ene_zeal_bulldozer_2/ene_zeal_bulldozer_2"),
+						Idstring("units/pd2_dlc_gitgud/characters/ene_zeal_bulldozer_3/ene_zeal_bulldozer_3"),
+						Idstring("units/pd2_dlc_drm/characters/ene_bulldozer_medic/ene_bulldozer_medic"),
+						Idstring("units/pd2_dlc_drm/characters/ene_bulldozer_minigun/ene_bulldozer_minigun")
+					}
+					local _xy_fixed = {
+						Vector3(100, 100, 0),
+						Vector3(-100, -100, 0),
+						Vector3(100, -100, 0),
+						Vector3(-100, 100, 0),
+						Vector3(0, 100, 0),
+						Vector3(0, -100, 0),
+						Vector3(100, 0, 0),
+						Vector3(-100, 0, 0)
+					}
+					for i = 1, 8 do
+						ChatCommand:spawn_enemy(table.random(unit_names), pos + _xy_fixed[i], rot)
+					end
+				elseif _roll_ans == 13 then
+					cmm:say("[".. pname .."] roll for Flame Out!!")
+					local projectile_index = "molotov"
+					local _xy_fixed = {-10, 10, -100, 100, -200, 200, -500, 500}
+					for i = 1, 10 do
+						ProjectileBase.throw_projectile(projectile_index, pos + Vector3(_xy_fixed[math.random(8)], _xy_fixed[math.random(8)], 50), Vector3(0, 0, -1), 0)
+					end
+				elseif _roll_ans == 14 then
+					cmm:say("[".. pname .."] roll for Flame Everyone!!")
+					ChatCommand.throw_projectile = ChatCommand.throw_projectile or {}
+					local all_criminals = managers.groupai:state():all_char_criminals() or {}
+					local all_enemies = managers.enemy:all_enemies() or {}
+					local flame_targets = {}
+					local flameey_dt = 0
+					for u_key, u_data in pairs(all_criminals) do
+						if alive(u_data.unit) then
+							flame_targets[tostring(u_key)] = u_data.unit:position()
+						end
+					end
+					for u_key, u_data in pairs(all_enemies) do
+						if u_data.unit and alive(u_data.unit) then
+							flame_targets[tostring(u_key)] = u_data.unit:position()
+						end
+					end
+					for _, flame_pos in pairs(flame_targets) do
+						flameey_dt = flameey_dt + 0.3
+						table.insert(ChatCommand.throw_projectile, {enable = true, projectile_index = "molotov", pos = flame_pos + Vector3(0, 0, 50), time_do = nowtime + flameey_dt})
+					end
+					ChatCommand.time2loopcheck = true
 				else
 					cmm:say("[".. pname .."] roll for nothing!!")
 				end
 			else
 				cmm:say("[".. pname .."] you still need to wait [".. (ChatCommand.rtd_time[pid] - nowtime) .."]s for next roll.")				
 			end
-			math.randomseed(tostring(os.time()):reverse():sub(1, 6))
 		end
 	end)
 	cmm:AddCommand("hydra", ChatCommand.CMD_ACCESS["hydra"][1], ChatCommand.CMD_ACCESS["hydra"][2], function(_, _, type2, _)
@@ -578,8 +633,7 @@ Hooks:Add("GameSetupUpdate", "RTDGameSetupUpdate", function(t, dt)
 		return
 	end
 	local function nukeunit(pawn)
-		pawn:character_damage():damage_mission({damage = 9999999, forced = true})
-		pawn:set_slot(0)
+		pawn:character_damage():damage_mission({damage = 9999999})
 	end
 	local nowtime = TimerManager:game():time()
 	if ChatCommand.time2loopcheck then
@@ -587,7 +641,7 @@ Hooks:Add("GameSetupUpdate", "RTDGameSetupUpdate", function(t, dt)
 			for id, data in pairs(ChatCommand.throw_projectile) do
 				if data.enable and type(data.time_do) == "number" and nowtime > data.time_do then
 					ChatCommand.throw_projectile[id].enable = false
-					ProjectileBase.throw_projectile(data.projectile_index, data.pos, Vector3(0, 0, -1), 1)
+					ProjectileBase.throw_projectile(data.projectile_index, data.pos, Vector3(0, 0, -1), 0)
 					ChatCommand.throw_projectile[id] = {}
 				end
 			end
@@ -651,7 +705,7 @@ Hooks:Add("GameSetupUpdate", "RTDGameSetupUpdate", function(t, dt)
 						_Split = ChatCommand.rtd_Hydra_Split
 					end
 					for i = 1 , _Split do
-						local unit_done = ChatCommand:spawn_enemy(data.unit_name, data.pos + Vector3(math.random(-200, 200), math.random(-200, 200), 0), Rotation())
+						ChatCommand:spawn_enemy(data.unit_name, data.pos + Vector3(math.random(-200, 200), math.random(-200, 200), 0), Rotation())
 					end
 					ChatCommand.rtd_Hydra_wait4do[id] = nil
 				end
@@ -678,6 +732,7 @@ Hooks:Add("GameSetupUpdate", "RTDGameSetupUpdate", function(t, dt)
 				enemyType == "tank" or enemyType == "spooc" or enemyType == "shield" or 
 				enemyType == "medic" ) then
 				nukeunit(data.unit)
+				break
 			end
 		end
 	end
