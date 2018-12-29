@@ -348,9 +348,9 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm)
 				elseif _roll_ans == 12 then
 					cmm:say("[".. pname .."] roll for Dozer!!")
 					local unit_names = {
-						Idstring("units/pd2_dlc_gitgud/characters/ene_zeal_bulldozer/ene_zeal_bulldozer"),
-						Idstring("units/pd2_dlc_gitgud/characters/ene_zeal_bulldozer_2/ene_zeal_bulldozer_2"),
-						Idstring("units/pd2_dlc_gitgud/characters/ene_zeal_bulldozer_3/ene_zeal_bulldozer_3"),
+						Idstring("units/payday2/characters/ene_bulldozer_1/ene_bulldozer_1"),
+						Idstring("units/payday2/characters/ene_bulldozer_2/ene_bulldozer_2"),
+						Idstring("units/payday2/characters/ene_bulldozer_3/ene_bulldozer_3"),
 						Idstring("units/pd2_dlc_drm/characters/ene_bulldozer_medic/ene_bulldozer_medic"),
 						Idstring("units/pd2_dlc_drm/characters/ene_bulldozer_minigun/ene_bulldozer_minigun")
 					}
