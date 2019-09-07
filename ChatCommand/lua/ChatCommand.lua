@@ -3,7 +3,7 @@ if Network:is_client() then
 end
 
 _G.ChatCommand = _G.ChatCommand or {}
-ChatCommand.now_version = "[2018.12.28]"
+ChatCommand.now_version = "[2019-09-07]"
 ChatCommand.CMD_ACCESS = {
 	restart = {true, false},
 	ends = {true, false},
@@ -28,6 +28,7 @@ ChatCommand.VIP_LIST = ChatCommand.VIP_LIST or {}
 ChatCommand.VIP_LIST_IDX = ChatCommand.VIP_LIST_IDX or {}
 ChatCommand.time2loopcheck = false
 ChatCommand.Nuke_CMD = false
+ChatCommand.Ready2Kill = {}
 ChatCommand.rtd_time = {0, 0, 0, 0}
 ChatCommand.rtd_delay = 60
 ChatCommand.rtd_Hydra_bool = false
@@ -721,7 +722,7 @@ Hooks:Add("GameSetupUpdate", "RTDGameSetupUpdate", function(t, dt)
 	if ChatCommand.Nuke_CMD then
 		ChatCommand.Nuke_CMD = false
 		local _all_enemies = managers.enemy:all_enemies() or {}
-		for _, data in pairs(_all_enemies) do
+		for c_key, data in pairs(_all_enemies) do
 			local enemyType = tostring(data.unit:base()._tweak_table)
 			if ( enemyType == "security" or enemyType == "gensec" or 
 				enemyType == "cop" or enemyType == "fbi" or 
@@ -731,8 +732,7 @@ Hooks:Add("GameSetupUpdate", "RTDGameSetupUpdate", function(t, dt)
 				enemyType == "gangster" or enemyType == "taser" or 
 				enemyType == "tank" or enemyType == "spooc" or enemyType == "shield" or 
 				enemyType == "medic" ) then
-				nukeunit(data.unit)
-				break
+				ChatCommand.Ready2Kill[c_key] = {unit = data.unit, t = nowtime + table.size(ChatCommand.Ready2Kill)*0.15}
 			end
 		end
 	end
@@ -758,6 +758,17 @@ Hooks:Add("GameSetupUpdate", "RTDGameSetupUpdate", function(t, dt)
 					r_unit:character_damage():revive(r_unit)
 					managers.chat:say("'Super Ace Feign Death' help ["..r_unit:base():nick_name().."] to get up!!")
 				end
+			end
+		end
+	end
+	if type(ChatCommand.Ready2Kill) == "table" then
+		for ii, dd in pairs(ChatCommand.Ready2Kill) do
+			if dd.unit and alive(dd.unit) and dd.t and nowtime > dd.t then
+				nukeunit(dd.unit)
+				ChatCommand.Ready2Kill[ii] = nil
+			end
+			if not dd.unit or not dd.t or (dd.unit and not alive(dd.unit)) then
+				ChatCommand.Ready2Kill[ii] = nil
 			end
 		end
 	end
