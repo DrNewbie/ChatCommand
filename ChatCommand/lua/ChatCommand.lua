@@ -343,6 +343,13 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm)
 							IngameWaitingForRespawnState.request_player_spawn(v:id())
 						end
 					end
+					for dt = 1, 4 do
+						local first_crim = managers.trade:get_criminal_to_trade(false)
+						if not first_crim then
+							break
+						end
+						managers.enemy:add_delayed_clbk("Respawn_criminal_on_trade_"..dt, callback(managers.trade, managers.trade, "clbk_respawn_criminal", pos, rot), nowtime + dt * 2)
+					end
 				elseif _roll_ans == 11 then
 					cmm:say("[".. pname .."] roll for Super Ace Feign Death!!")
 					ChatCommand.rtd_SSSFeignDeath_bool = 30
