@@ -3,7 +3,7 @@ if Network:is_client() then
 end
 
 _G.ChatCommand = _G.ChatCommand or {}
-ChatCommand.now_version = "[2019-09-07]"
+ChatCommand.now_version = "[2019-12-01]"
 ChatCommand.CMD_ACCESS = {
 	restart = {true, false},
 	ends = {true, false},
@@ -422,13 +422,26 @@ Hooks:PostHook(ChatManager, "init", "ChatCommand_Init", function(cmm)
 		ChatCommand.Nuke_CMD = true
 		cmm:say("[!! Kill all enemy !!]")
 	end)
-	cmm:AddCommand("free", ChatCommand.CMD_ACCESS["free"][1], ChatCommand.CMD_ACCESS["free"][2], function()
-		for k, v in pairs( managers.network:session():peers() ) do
-			if managers.trade and managers.trade.is_peer_in_custody and managers.trade:is_peer_in_custody(v:id()) then
-				IngameWaitingForRespawnState.request_player_spawn(v:id())
+	cmm:AddCommand("free", ChatCommand.CMD_ACCESS["free"][1], ChatCommand.CMD_ACCESS["free"][2], function(peer)
+		if peer and peer:unit() and managers.trade then
+			local unit = peer:unit()
+			local nowtime = math.floor(TimerManager:game():time())
+			local pos = unit:position()
+			local rot = unit:rotation()
+			for k, v in pairs( managers.network:session():peers() ) do
+				if managers.trade and managers.trade.is_peer_in_custody and managers.trade:is_peer_in_custody(v:id()) then
+					IngameWaitingForRespawnState.request_player_spawn(v:id())
+				end
 			end
+			for dt = 1, 4 do
+				local first_crim = managers.trade:get_criminal_to_trade(false)
+				if not first_crim then
+					break
+				end
+				managers.enemy:add_delayed_clbk("Respawn_criminal_on_trade_"..dt, callback(managers.trade, managers.trade, "clbk_respawn_criminal", pos, rot), nowtime + dt * 2)
+			end
+			cmm:say("[!! Free my teammate !!]")
 		end
-		cmm:say("[!! Free my teammate !!]")
 	end)
 	cmm:AddCommand("bomb", ChatCommand.CMD_ACCESS["bomb"][1], ChatCommand.CMD_ACCESS["bomb"][2], function(peer)
 		if peer and peer.unit and peer:unit().position then

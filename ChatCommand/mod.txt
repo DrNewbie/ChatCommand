@@ -3,7 +3,7 @@
   "description": " It will do something if you type special command in chat.",
   "author": "Dr_Newbie",
   "contact": " ",
-  "version": "9",
+  "version": "10",
   "priority": 100,
   "color": "0 0 0",
   "blt_version": 2,
