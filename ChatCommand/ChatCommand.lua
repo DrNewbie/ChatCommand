@@ -654,7 +654,13 @@ Hooks:Add("GameSetupUpdate", "RTDGameSetupUpdate", function(t, dt)
 		return
 	end
 	local function nukeunit(pawn)
-		pawn:character_damage():damage_mission({damage = 9999999})
+		if pawn and pawn.character_damage and pawn:character_damage() and pawn:character_damage().damage_mission then
+			pawn:character_damage():damage_mission(
+				{
+					damage = pawn:character_damage()._health * 100
+				}
+			)
+		end
 	end
 	local nowtime = TimerManager:game():time()
 	if ChatCommand.time2loopcheck then
@@ -743,17 +749,7 @@ Hooks:Add("GameSetupUpdate", "RTDGameSetupUpdate", function(t, dt)
 		ChatCommand.Nuke_CMD = false
 		local _all_enemies = managers.enemy:all_enemies() or {}
 		for c_key, data in pairs(_all_enemies) do
-			local enemyType = tostring(data.unit:base()._tweak_table)
-			if ( enemyType == "security" or enemyType == "gensec" or 
-				enemyType == "cop" or enemyType == "fbi" or 
-				enemyType == "swat" or enemyType == "heavy_swat" or 
-				enemyType == "fbi_swat" or enemyType == "fbi_heavy_swat" or 
-				enemyType == "city_swat" or enemyType == "sniper" or 
-				enemyType == "gangster" or enemyType == "taser" or 
-				enemyType == "tank" or enemyType == "spooc" or enemyType == "shield" or 
-				enemyType == "medic" ) then
-				ChatCommand.Ready2Kill[c_key] = {unit = data.unit, t = nowtime + table.size(ChatCommand.Ready2Kill)*0.15}
-			end
+			ChatCommand.Ready2Kill[c_key] = {unit = data.unit, t = nowtime + table.size(ChatCommand.Ready2Kill)*0.15}
 		end
 	end
 	if ChatCommand.rtd_SSSFeignDeath_bool then
